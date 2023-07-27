@@ -31,7 +31,7 @@ export async function submitForm(
     }
 
     let formRef = db.ref(`forms/${docId}`);
-    await formRef.set(formData);
+    await formRef.set({"@docPath": docPath, ...formData});
 
     let currentStatus = formData["@status"];
     let currentFormData = formData;

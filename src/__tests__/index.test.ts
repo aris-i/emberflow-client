@@ -54,21 +54,21 @@ jest.mock('@react-native-firebase/auth', () => {
     };
 });
 
-const path = 'forms/testUserId/testDocId';
+const docPath = 'forms/testUserId/testDocId';
 initClient('testDatabaseName', 'testRegion');
 
 describe('submitForm', () => {
     it('should set form data and listen for status changes', async () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'submitted', 'finished'];
-        let cancelForm = await submitForm(path, formData, statusHandlerMock);
+        let cancelForm = await submitForm(docPath, formData, statusHandlerMock);
         runCallback();
 
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
-        expect(formRefMock.set).toHaveBeenCalledWith(formData);
+        expect(formRefMock.set).toHaveBeenCalledWith({"@docPath": docPath, ...formData});
         expect(formRefMock.on).toHaveBeenCalledWith('value', expect.any(Function));
-        expect(statusHandlerMock).toHaveBeenCalledWith('submitted', {...formData, "@status": "submitted"});
+        expect(statusHandlerMock).toHaveBeenCalledWith('submitted', {"@docPath": docPath, ...formData, "@status": "submitted"});
         expect(formRefMock.off).toHaveBeenCalledWith('value', expect.any(Function));
     });
 
@@ -76,7 +76,7 @@ describe('submitForm', () => {
         // Call the cancel function returned by submitForm
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'submitted'];
-        let cancelForm = await submitForm(path, formData, statusHandlerMock);
+        let cancelForm = await submitForm(docPath, formData, statusHandlerMock);
         runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
@@ -86,7 +86,7 @@ describe('submitForm', () => {
         // Call the cancel function returned by submitForm
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'delay'];
-        let cancelForm = await submitForm(path, {
+        let cancelForm = await submitForm(docPath, {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
@@ -101,7 +101,7 @@ describe('submitForm', () => {
         // Call the cancel function returned by submitForm
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'delay', 'submitted'];
-        let cancelForm = await submitForm(path, {
+        let cancelForm = await submitForm(docPath, {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
