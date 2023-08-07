@@ -1,7 +1,5 @@
 import {firebase, FirebaseDatabaseTypes} from "@react-native-firebase/database";
 import {FormData, FormStatus, FormStatusHandler} from "./types";
-import auth from '@react-native-firebase/auth';
-export * from "./types";
 
 let db: FirebaseDatabaseTypes.Module;
 
@@ -17,41 +15,39 @@ export async function submitForm(
     statusHandler: FormStatusHandler
 ) {
     // get the second element and last element from docPath split by "/"
-    const splits = docPath.split("/");
-    const userId = splits[1];
-    const docId = splits[splits.length - 1];
-    // get current logged in user id
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-        throw new Error("No current logged in user");
-    }
-    const currentUserId = currentUser.uid;
-    if (currentUserId !== userId) {
-        throw new Error("Logged in user id does not match docPath user id");
-    }
+    const userId = docPath.split("/")[1];
 
-    let formRef = db.ref(`forms/${docId}`);
-    await formRef.set({"@docPath": docPath, ...formData});
-
-    let currentStatus = formData["@status"];
-    let currentFormData = formData;
+    const formRef = db.ref(`forms/${userId}`).push();
+    await formRef.set({...formData, "@docPath": docPath, "@status": "submit"});
+    let currentStatus = "submit";
     const onValueChange = formRef
-        .on('value', snapshot => {
-            currentFormData = snapshot.val();
-            const newStatus = currentFormData["@status"] as FormStatus;
-            console.log('new status: ', newStatus);
-            if (newStatus !== currentStatus) {
-                statusHandler(newStatus, currentFormData);
-                if (newStatus === "finished" || newStatus === "cancelled"
-                    || newStatus === "validation-error" || newStatus === "security-error" ) {
-                    formRef.off('value', onValueChange);
-                }
-                currentStatus = newStatus;
+        .on('child_changed', snapshot => {
+            const changedVal = snapshot.val();
+            const changedKey = snapshot.key;
+            if (!changedKey) {
+                return;
             }
+
+            if (changedKey !== "@status") {
+                return;
+            }
+
+            const newStatus = changedVal as FormStatus;
+            let isLastUpdate = false;
+            if (newStatus === "finished" || newStatus === "cancelled"
+                || newStatus === "validation-error" || newStatus === "security-error"
+                || newStatus === "error") {
+                isLastUpdate = true;
+                formRef.off('child_changed', onValueChange);
+            }
+
+            statusHandler(newStatus, {...formData, "@status": newStatus, "@docPath": docPath}, isLastUpdate);
+            currentStatus = newStatus;
         });
+
     return {
         cancel: async () => {
-            const delay = currentFormData["@delay"];
+            const delay = formData["@delay"];
             if (delay){
                 if (currentStatus === "delay") {
                     console.log("Cancelling form");
@@ -65,6 +61,9 @@ export async function submitForm(
                 console.log("Can only cancel form with delay");
                 return false;
             }
+        },
+        unsubscribe: () => {
+            formRef.off('child_changed', onValueChange);
         }
     }
 }

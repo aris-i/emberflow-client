@@ -1,8 +1,12 @@
 {
   "name": "emberflow-rn-client",
-  "version": "1.0.0",
+  "version": "1.0.21",
   "description": "Utility library for front end clients that allow submitting forms to emberflow powered backends",
   "main": "lib/index.js",
+  "types": "lib/index.d.js",
+  "files": [
+    "lib/"
+  ],
   "scripts": {
     "test": "jest",
     "build": "tsc",
@@ -26,9 +30,8 @@
   },
   "homepage": "https://github.com/aris-i/emberflow-rn-client#readme",
   "peerDependencies": {
-    "@react-native-firebase/app": "^18.1.0",
-    "@react-native-firebase/auth": "^18.1.0",
-    "@react-native-firebase/database": "^18.1.0"
+    "@react-native-firebase/app": "^18.0.0",
+    "@react-native-firebase/database": "^18.0.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.3",

@@ -14974,3 +14974,5 @@
 /.idea/emberflow-rn-client.iml
 /.idea/misc.xml
 /.idea/modules.xml
+/lib/
+/.idea/vcs.xml
