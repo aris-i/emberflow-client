@@ -3,8 +3,11 @@ import {getDatabase, Database, push, ref, set, onChildChanged, off, update} from
 import {FirebaseApp} from "@firebase/app";
 
 let db: Database;
-export function initClient(app: FirebaseApp) {
+let globalStatusMap: Record<string, string> = {};
+export function initClient(app: FirebaseApp, statusMap?: Record<string, string>) {
     db = getDatabase(app);
+    console.log("statusMap ", statusMap);
+    globalStatusMap = statusMap || {};
 }
 export async function submitForm(
     docPath: string,
@@ -14,8 +17,11 @@ export async function submitForm(
     // get the second element and last element from docPath split by "/"
     const userId = docPath.split("/")[1];
     const formRef = push(ref(db, `forms/${userId}`));
-    await set(ref(db, docPath), {...formData, "@status": "submit", "@docPath": docPath});
-    let currentStatus = "submit";
+    await set(
+        ref(db, docPath),
+        {...formData, "@status": getStatusValue("submit") , "@docPath": docPath}
+    );
+    let currentStatus = getStatusValue("submit");
     const onValueChange = onChildChanged(formRef, (snapshot) => {
         const changedVal = snapshot.val();
         const changedKey = snapshot.key;
@@ -29,9 +35,10 @@ export async function submitForm(
 
         const newStatus = changedVal as FormStatus;
         let isLastUpdate = false;
-        if (newStatus === "finished" || newStatus === "cancelled"
-            || newStatus === "validation-error" || newStatus === "security-error"
-            || newStatus === "error") {
+        if (newStatus === getStatusValue("finished") || newStatus === getStatusValue("cancelled")
+            || newStatus === getStatusValue("validation-error")
+            || newStatus === getStatusValue("security-error")
+            || newStatus === getStatusValue("error")) {
             isLastUpdate = true;
             off(formRef, 'child_changed', onValueChange);
         }
@@ -44,9 +51,9 @@ export async function submitForm(
         cancel: async () => {
             const delay = formData["@delay"];
             if (delay){
-                if (currentStatus === "delay") {
+                if (currentStatus === getStatusValue("delay")) {
                     console.log("Cancelling form");
-                    await update(formRef, {"@status": "cancel"});
+                    await update(formRef, {"@status": getStatusValue("cancel")});
                     return true;
                 } else {
                     console.log("Delay has elapsed.  Can't cancel form");
@@ -61,4 +68,8 @@ export async function submitForm(
             off(formRef, 'child_changed', onValueChange);
         }
     }
+}
+
+export function getStatusValue(statusKey: string): string {
+    return globalStatusMap[statusKey] || statusKey;
 }
