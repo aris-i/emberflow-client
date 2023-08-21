@@ -3,11 +3,10 @@ import {getDatabase, Database, push, ref, set, onChildChanged, off, update} from
 import {FirebaseApp} from "@firebase/app";
 
 let db: Database;
-let globalStatusMap: Record<string, string> = {};
-export function initClient(app: FirebaseApp, statusMap?: Record<string, string>) {
+let statusMap: Record<string, string> = {};
+export function initClient(app: FirebaseApp, _statusMap?: Record<string, string>) {
     db = getDatabase(app);
-    console.log("statusMap ", statusMap);
-    globalStatusMap = statusMap || {};
+    statusMap = _statusMap || {};
 }
 export async function submitForm(
     docPath: string,
@@ -18,7 +17,7 @@ export async function submitForm(
     const userId = docPath.split("/")[1];
     const formRef = push(ref(db, `forms/${userId}`));
     await set(
-        ref(db, docPath),
+        formRef,
         {...formData, "@status": getStatusValue("submit") , "@docPath": docPath}
     );
     let currentStatus = getStatusValue("submit");
@@ -71,5 +70,5 @@ export async function submitForm(
 }
 
 export function getStatusValue(statusKey: string): string {
-    return globalStatusMap[statusKey] || statusKey;
+    return statusMap[statusKey] || statusKey;
 }
