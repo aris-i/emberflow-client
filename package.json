@@ -30,7 +30,7 @@
   },
   "homepage": "https://github.com/aris-i/emberflow-client#readme",
   "peerDependencies": {
-    "firebase": "^10.2.0"
+    "firebase": "^9.6.9"
   },
   "devDependencies": {
     "@types/jest": "^29.5.3",
