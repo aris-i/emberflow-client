@@ -1,13 +1,11 @@
-import {firebase, FirebaseDatabaseTypes} from "@react-native-firebase/database";
 import {FormData, FormStatus, FormStatusHandler} from "./types";
+import {getDatabase, Database, push, ref, set, onChildChanged, off, update} from "firebase/database";
 
-let db: FirebaseDatabaseTypes.Module;
-
-export function initClient(databaseName: string, region: string) {
-    db = firebase
-        .app()
-        .database(`https://${databaseName}.${region}.firebasedatabase.app/`);
-
+let db: Database;
+let statusMap: Record<string, string> = {};
+export function initClient(databaseName: string, region: string, _statusMap?: Record<string, string>) {
+    db = getDatabase(undefined, `https://${databaseName}.${region}.firebasedatabase.app/`);
+    statusMap = _statusMap || {};
 }
 export async function submitForm(
     docPath: string,
@@ -16,42 +14,44 @@ export async function submitForm(
 ) {
     // get the second element and last element from docPath split by "/"
     const userId = docPath.split("/")[1];
+    const formRef = push(ref(db, `forms/${userId}`));
+    await set(
+        formRef,
+        {...formData, "@status": getStatusValue("submit") , "@docPath": docPath}
+    );
+    let currentStatus = getStatusValue("submit");
+    const onValueChange = onChildChanged(formRef, (snapshot) => {
+        const changedVal = snapshot.val();
+        const changedKey = snapshot.key;
+        if (!changedKey) {
+            return;
+        }
 
-    const formRef = db.ref(`forms/${userId}`).push();
-    await formRef.set({...formData, "@docPath": docPath, "@status": "submit"});
-    let currentStatus = "submit";
-    const onValueChange = formRef
-        .on('child_changed', snapshot => {
-            const changedVal = snapshot.val();
-            const changedKey = snapshot.key;
-            if (!changedKey) {
-                return;
-            }
+        if (changedKey !== "@status") {
+            return;
+        }
 
-            if (changedKey !== "@status") {
-                return;
-            }
+        const newStatus = changedVal as FormStatus;
+        let isLastUpdate = false;
+        if (newStatus === getStatusValue("finished") || newStatus === getStatusValue("cancelled")
+            || newStatus === getStatusValue("validation-error")
+            || newStatus === getStatusValue("security-error")
+            || newStatus === getStatusValue("error")) {
+            isLastUpdate = true;
+            off(formRef, 'child_changed', onValueChange);
+        }
 
-            const newStatus = changedVal as FormStatus;
-            let isLastUpdate = false;
-            if (newStatus === "finished" || newStatus === "cancelled"
-                || newStatus === "validation-error" || newStatus === "security-error"
-                || newStatus === "error") {
-                isLastUpdate = true;
-                formRef.off('child_changed', onValueChange);
-            }
-
-            statusHandler(newStatus, {...formData, "@status": newStatus, "@docPath": docPath}, isLastUpdate);
-            currentStatus = newStatus;
-        });
+        statusHandler(newStatus, {...formData, "@status": newStatus, "@docPath": docPath}, isLastUpdate);
+        currentStatus = newStatus;
+    });
 
     return {
         cancel: async () => {
             const delay = formData["@delay"];
             if (delay){
-                if (currentStatus === "delay") {
+                if (currentStatus === getStatusValue("delay")) {
                     console.log("Cancelling form");
-                    await formRef.update({"@status": "cancel"});
+                    await update(formRef, {"@status": getStatusValue("cancel")});
                     return true;
                 } else {
                     console.log("Delay has elapsed.  Can't cancel form");
@@ -63,7 +63,11 @@ export async function submitForm(
             }
         },
         unsubscribe: () => {
-            formRef.off('child_changed', onValueChange);
+            off(formRef, 'child_changed', onValueChange);
         }
     }
+}
+
+export function getStatusValue(statusKey: string): string {
+    return statusMap[statusKey] || statusKey;
 }
