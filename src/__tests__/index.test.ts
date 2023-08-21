@@ -1,6 +1,7 @@
 import {initClient, submitForm} from '../index';
 import {FormData} from '../types';
 import {off, onChildChanged, ref, set, update} from "firebase/database";
+import {initializeApp} from "firebase/app";
 
 // Mock the firebase database module
 const formData : FormData = {
@@ -54,9 +55,15 @@ jest.mock('@firebase/app', () => ({
 // Mock the auth module
 const docPath = 'forms/testUserId/testDocId';
 
+const app = initializeApp({});
+
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient('testDatabaseName', 'testRegion');
+        initClient(
+            app,
+            'testDatabaseName',
+            'testRegion'
+        );
     });
     it('should set form data and listen for status changes', async () => {
         dbRefMock.mockReturnValue(formRefMock);
@@ -141,6 +148,7 @@ describe('submitForm with custom status map', () => {
     beforeAll(() => {
         jest.clearAllMocks();
         initClient(
+            app,
             'testDatabaseName',
             'testRegion',
             {

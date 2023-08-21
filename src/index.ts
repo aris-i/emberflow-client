@@ -5,10 +5,10 @@ import {FirebaseApp} from 'firebase/app';
 let db: Database;
 let statusMap: Record<string, string> = {};
 export function initClient(
+    app: FirebaseApp,
     databaseName: string,
     region: string,
     _statusMap?: Record<string, string>,
-    app?: FirebaseApp,
 ) {
     db = getDatabase(app, `https://${databaseName}.${region}.firebasedatabase.app/`);
     statusMap = _statusMap || {};
