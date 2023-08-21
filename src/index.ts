@@ -1,11 +1,10 @@
 import {FormData, FormStatus, FormStatusHandler} from "./types";
 import {getDatabase, Database, push, ref, set, onChildChanged, off, update} from "firebase/database";
-import {FirebaseApp} from "@firebase/app";
 
 let db: Database;
 let statusMap: Record<string, string> = {};
-export function initClient(app: FirebaseApp, _statusMap?: Record<string, string>) {
-    db = getDatabase(app);
+export function initClient(databaseName: string, region: string, _statusMap?: Record<string, string>) {
+    db = getDatabase(undefined, `https://${databaseName}.${region}.firebasedatabase.app/`);
     statusMap = _statusMap || {};
 }
 export async function submitForm(

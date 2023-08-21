@@ -1,6 +1,5 @@
 import {initClient, submitForm} from '../index';
 import {FormData} from '../types';
-import {initializeApp} from 'firebase/app';
 import {off, onChildChanged, ref, set, update} from "firebase/database";
 
 // Mock the firebase database module
@@ -54,14 +53,10 @@ jest.mock('@firebase/app', () => ({
 
 // Mock the auth module
 const docPath = 'forms/testUserId/testDocId';
-const firebaseConfig = {
-    // Your Firebase config
-};
 
-const app = initializeApp(firebaseConfig);
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient(app);
+        initClient('testDatabaseName', 'testRegion');
     });
     it('should set form data and listen for status changes', async () => {
         dbRefMock.mockReturnValue(formRefMock);
@@ -71,6 +66,7 @@ describe('submitForm', () => {
         runCallback();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
+        expect(ref).toHaveBeenCalledTimes(1);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
         expect(set).toHaveBeenCalledWith(
@@ -144,7 +140,8 @@ describe('submitForm', () => {
 describe('submitForm with custom status map', () => {
     beforeAll(() => {
         initClient(
-            app,
+            'testDatabaseName',
+            'testRegion',
             {
                 "submit": "Submit",
                 "delay": "Delay",
@@ -163,6 +160,7 @@ describe('submitForm with custom status map', () => {
         runCallback();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
+        expect(ref).toHaveBeenCalledTimes(1);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
         expect(set).toHaveBeenCalledWith(
