@@ -139,6 +139,7 @@ describe('submitForm', () => {
 
 describe('submitForm with custom status map', () => {
     beforeAll(() => {
+        jest.clearAllMocks();
         initClient(
             'testDatabaseName',
             'testRegion',
