@@ -6,11 +6,10 @@ let db: Database;
 let statusMap: Record<string, string> = {};
 export function initClient(
     app: FirebaseApp,
-    databaseName: string,
-    region: string,
+    url?: string,
     _statusMap?: Record<string, string>,
 ) {
-    db = getDatabase(app, `https://${databaseName}.${region}.firebasedatabase.app/`);
+    db = getDatabase(app, url);
     statusMap = _statusMap || {};
 }
 export async function submitForm(
