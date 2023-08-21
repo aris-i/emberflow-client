@@ -61,8 +61,7 @@ describe('submitForm', () => {
     beforeAll(() => {
         initClient(
             app,
-            'testDatabaseName',
-            'testRegion'
+            'https://testDatabaseName.testRegion.firebasedatabase.app',
         );
     });
     it('should set form data and listen for status changes', async () => {
@@ -149,8 +148,7 @@ describe('submitForm with custom status map', () => {
         jest.clearAllMocks();
         initClient(
             app,
-            'testDatabaseName',
-            'testRegion',
+            'https://testDatabaseName.testRegion.firebasedatabase.app',
             {
                 "submit": "Submit",
                 "delay": "Delay",
