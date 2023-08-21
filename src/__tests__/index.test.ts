@@ -36,7 +36,7 @@ jest.mock('firebase/database', () => ({
     push: jest.fn(() => {
         return onReturnMock;
     }),
-    ref: jest.fn((path) => {
+    ref: jest.fn(() => {
         return onReturnMock;
     }),
     getDatabase: jest.fn((dbRef) => {
@@ -133,7 +133,7 @@ describe('submitForm', () => {
         statusTransition = ['delay', 'submitted'];
         let form = await submitForm(docPath, formData, statusHandlerMock);
         runCallback();
-        const cancelResult = await form.unsubscribe();
+        await form.unsubscribe();
         expect(off).toHaveBeenCalled();
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", onReturnMock );
     });
