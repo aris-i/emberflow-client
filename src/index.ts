@@ -9,7 +9,7 @@ export function initClient(
     url?: string,
     _statusMap?: Record<FormStatus, string>,
 ) {
-    db = getDatabase(app, `https://${databaseName}.${region}.firebasedatabase.app/`);
+    db = getDatabase(app, url);
     if(_statusMap){
         statusMap = _statusMap;
     }
