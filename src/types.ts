@@ -1,7 +1,8 @@
 export type FormStatus = "submit" | "submitted" | "validation-error"
     | "security-error" | "finished" | "delay" | "cancel" | "cancelled" | "error";
+export type FormActionType = "create" | "update" | "delete";
 export interface FormData {
-    "@actionType": "create" | "update" | "delete";
+    "@actionType": FormActionType;
 
     [key: string]: any;
 }
