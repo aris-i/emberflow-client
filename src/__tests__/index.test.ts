@@ -157,6 +157,10 @@ describe('submitForm with custom status map', () => {
                 "cancel": "Cancel",
                 "submitted": "Submitted",
                 "finished": "Finished",
+                "cancelled": "Canceled",
+                "error": "Error",
+                "security-error": "SecurityError",
+                "validation-error": "ValidationError",
             }
         );
     });
