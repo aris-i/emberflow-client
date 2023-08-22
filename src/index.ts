@@ -6,8 +6,7 @@ let db: Database;
 let statusMap: Record<FormStatus, string>;
 export function initClient(
     app: FirebaseApp,
-    databaseName: string,
-    region: string,
+    url?: string,
     _statusMap?: Record<FormStatus, string>,
 ) {
     db = getDatabase(app, `https://${databaseName}.${region}.firebasedatabase.app/`);
