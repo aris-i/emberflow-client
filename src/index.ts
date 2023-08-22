@@ -3,14 +3,16 @@ import {getDatabase, Database, push, ref, set, onChildChanged, off, update} from
 import {FirebaseApp} from 'firebase/app';
 
 let db: Database;
-let statusMap: Record<string, string> = {};
+let statusMap: Record<FormStatus, string>;
 export function initClient(
     app: FirebaseApp,
     url?: string,
-    _statusMap?: Record<string, string>,
+    _statusMap?: Record<FormStatus, string>,
 ) {
     db = getDatabase(app, url);
-    statusMap = _statusMap || {};
+    if(_statusMap){
+        statusMap = _statusMap;
+    }
 }
 export async function submitForm(
     docPath: string,
@@ -73,6 +75,6 @@ export async function submitForm(
     }
 }
 
-export function getStatusValue(statusKey: string): string {
-    return statusMap[statusKey] || statusKey;
+export function getStatusValue(statusKey: FormStatus): string {
+    return statusMap ? (statusMap[statusKey] || statusKey) : statusKey;
 }
