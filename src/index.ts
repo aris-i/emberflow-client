@@ -1,13 +1,13 @@
-import {firebase, FirebaseDatabaseTypes} from "@react-native-firebase/database";
 import {FormData, FormStatus, FormStatusHandler} from "./types";
+import * as admin from "firebase-admin";
+import {database} from "firebase-admin";
 
-let db: FirebaseDatabaseTypes.Module;
+let db: database.Database;
 let statusMap: Record<FormStatus, string>;
+type FirebaseApp = admin.app.App;
 
-export function initClient(databaseName: string, region: string, _statusMap?: Record<FormStatus, string>) {
-    db = firebase
-        .app()
-        .database(`https://${databaseName}.${region}.firebasedatabase.app/`);
+export function initClient(fbAdmin: FirebaseApp, _statusMap?: Record<FormStatus, string>) {
+    db = fbAdmin.database();
     if(_statusMap){
         statusMap = _statusMap;
     }
