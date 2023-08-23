@@ -4,9 +4,8 @@ import {database} from "firebase-admin";
 
 let db: database.Database;
 let statusMap: Record<FormStatus, string>;
-type FirebaseApp = admin.app.App;
 
-export function initClient(fbAdmin: FirebaseApp, _statusMap?: Record<FormStatus, string>) {
+export function initClient(fbAdmin: admin.app.App, _statusMap?: Record<FormStatus, string>) {
     db = fbAdmin.database();
     if(_statusMap){
         statusMap = _statusMap;
