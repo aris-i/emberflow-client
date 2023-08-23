@@ -1,31 +1,32 @@
 import {FormData, FormStatus, FormStatusHandler} from "./types";
 import {getDatabase, Database, push, ref, set, onChildChanged, off, update} from "firebase/database";
-import {FirebaseApp} from 'firebase/app';
+import {FirebaseApp} from "firebase/app";
 
 let db: Database;
 let statusMap: Record<FormStatus, string>;
+
 export function initClient(
     app: FirebaseApp,
     url?: string,
     _statusMap?: Record<FormStatus, string>,
 ) {
     db = getDatabase(app, url);
-    if(_statusMap){
+    if (_statusMap) {
         statusMap = _statusMap;
     }
 }
+
 export async function submitForm(
-    docPath: string,
     formData: FormData,
     statusHandler: FormStatusHandler
 ) {
     // get the second element and last element from docPath split by "/"
-    const userId = docPath.split("/")[1];
+    const userId = formData["@docPath"].split("/")[1];
     const formRef = push(ref(db, `forms/${userId}`));
-    await set(
-        formRef,
-        {...formData, "@status": getStatusValue("submit") , "@docPath": docPath}
-    );
+    await set(formRef, {
+        "@status": getStatusValue("submit"),
+        formData: JSON.stringify(formData),
+    });
     let currentStatus = getStatusValue("submit");
     const onValueChange = onChildChanged(formRef, (snapshot) => {
         const changedVal = snapshot.val();
@@ -48,14 +49,14 @@ export async function submitForm(
             off(formRef, 'child_changed', onValueChange);
         }
 
-        statusHandler(newStatus, {...formData, "@status": newStatus, "@docPath": docPath}, isLastUpdate);
+        statusHandler(newStatus, {...formData, "@status": newStatus}, isLastUpdate);
         currentStatus = newStatus;
     });
 
     return {
         cancel: async () => {
             const delay = formData["@delay"];
-            if (delay){
+            if (delay) {
                 if (currentStatus === getStatusValue("delay")) {
                     console.log("Cancelling form");
                     await update(formRef, {"@status": getStatusValue("cancel")});
