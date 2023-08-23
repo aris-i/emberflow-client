@@ -1,5 +1,6 @@
 import {initClient, submitForm} from '../index';
 import {FormData} from '../types';
+import * as admin from "firebase-admin";
 
 // Mock the firebase database module
 const formData : FormData = {
@@ -9,7 +10,6 @@ const formData : FormData = {
 };
 let statusTransition = ['submitted'];
 let _callback : Function;
-let _formData : FormData;
 function runCallback() {
     for (const status of statusTransition) {
         _callback({
@@ -21,45 +21,41 @@ function runCallback() {
 const onReturnMock = jest.fn();
 const formRefMock = {
     key: 'testDocId',
-    set: jest.fn((formData) => {
-        _formData = formData;
-    }),
-    push: jest.fn().mockReturnThis(),
     on: jest.fn((eventType: string, callback: Function) => {
         _callback = callback;
         return onReturnMock;
     }),
+    set: jest.fn(),
     off: jest.fn(),
     update: jest.fn(),
+    ref: jest.fn().mockReturnThis(),
+    push: jest.fn().mockReturnThis(),
 };
 
 const dbRefMock = jest.fn();
-jest.mock('@react-native-firebase/database', () => ({
+jest.mock('firebase-admin', () => ({
     __esModule: true,
-    firebase: {
-        app: jest.fn(() => ({
-            database: jest.fn(() => ({
-                ref: dbRefMock,
-            })),
-        })),
-    },
+    initializeApp: jest.fn(),
+    database: jest.fn(() => {
+        return formRefMock;
+    }),
 }));
 
+const adminInstance = admin.initializeApp();
 // Mock the auth module
 const docPath = 'forms/testUserId/testDocId';
-
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient('testDatabaseName', 'testRegion');
+        initClient(adminInstance);
     });
     it('should set form data and listen for status changes', async () => {
-        dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         statusTransition = ['submitted', 'finished'];
         let cancelForm = await submitForm(docPath, formData, statusHandlerMock);
         runCallback();
 
-        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
+        expect(formRefMock.ref).toHaveBeenCalledWith('forms/testUserId');
+        expect(formRefMock.ref).toHaveBeenCalledTimes(1);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
         expect(formRefMock.set).toHaveBeenCalledWith(
@@ -133,7 +129,7 @@ describe('submitForm with custom status map', () => {
     beforeAll(() => {
         jest.clearAllMocks();
         initClient(
-            'testDatabaseName', 'testRegion',
+            adminInstance,
             {
                 "submit": "Submit",
                 "delay": "Delay",
@@ -155,7 +151,8 @@ describe('submitForm with custom status map', () => {
         let cancelForm = await submitForm(docPath, formData, statusHandlerMock);
         runCallback();
 
-        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
+        expect(formRefMock.ref).toHaveBeenCalledWith('forms/testUserId');
+        expect(formRefMock.ref).toHaveBeenCalledTimes(1);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
         expect(formRefMock.set).toHaveBeenCalledWith(

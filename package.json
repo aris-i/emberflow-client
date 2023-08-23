@@ -30,8 +30,7 @@
   },
   "homepage": "https://github.com/aris-i/emberflow-client#readme",
   "peerDependencies": {
-    "@react-native-firebase/app": "^18.0.0",
-    "@react-native-firebase/database": "^18.0.0"
+    "firebase-admin": "^10.2.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.3",
