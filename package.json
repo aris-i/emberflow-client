@@ -1,6 +1,6 @@
 {
   "name": "emberflow-rn-client",
-  "version": "1.0.28",
+  "version": "1.1.1",
   "description": "Utility library for front end clients that allow submitting forms to emberflow powered backends",
   "main": "lib/index.js",
   "types": "lib/index.d.js",

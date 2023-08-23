@@ -13,15 +13,17 @@ export function initClient(databaseName: string, region: string, _statusMap?: Re
     }
 }
 export async function submitForm(
-    docPath: string,
     formData: FormData,
     statusHandler: FormStatusHandler
 ) {
     // get the second element and last element from docPath split by "/"
-    const userId = docPath.split("/")[1];
+    const userId = formData["@docPath"].split("/")[1];
 
     const formRef = db.ref(`forms/${userId}`).push();
-    await formRef.set({...formData, "@docPath": docPath, "@status": getStatusValue("submit")});
+    await formRef.set({
+        "@status": getStatusValue("submit"),
+        formData: JSON.stringify(formData),
+    });
     let currentStatus = getStatusValue("submit");
     const onValueChange = formRef
         .on('child_changed', snapshot => {
@@ -45,7 +47,7 @@ export async function submitForm(
                 formRef.off('child_changed', onValueChange);
             }
 
-            statusHandler(newStatus, {...formData, "@status": newStatus, "@docPath": docPath}, isLastUpdate);
+            statusHandler(newStatus, {...formData, "@status": newStatus}, isLastUpdate);
             currentStatus = newStatus;
         });
 
