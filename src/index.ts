@@ -15,7 +15,6 @@ export function initClient(
     }
 }
 export async function submitForm(
-    docPath: string,
     formData: FormData,
     statusHandler: FormStatusHandler
 ) {
@@ -33,6 +32,21 @@ export async function submitForm(
         if (!changedKey) {
             return;
         }
+    const userId = formData["@docPath"].split("/")[1];
+
+    const formRef = db.ref(`forms/${userId}`).push();
+    await formRef.set({
+        "@status": getStatusValue("submit"),
+        formData: JSON.stringify(formData),
+    });
+    let currentStatus = getStatusValue("submit");
+    const onValueChange = formRef
+        .on('child_changed', snapshot => {
+            const changedVal = snapshot.val();
+            const changedKey = snapshot.key;
+            if (!changedKey) {
+                return;
+            }
 
         if (changedKey !== "@status") {
             return;
@@ -47,10 +61,19 @@ export async function submitForm(
             isLastUpdate = true;
             off(formRef, 'child_changed', onValueChange);
         }
+            const newStatus = changedVal as FormStatus;
+            let isLastUpdate = false;
+            if (newStatus === getStatusValue("finished") || newStatus === getStatusValue("cancelled")
+                || newStatus === getStatusValue("validation-error")
+                || newStatus === getStatusValue("security-error")
+                || newStatus === getStatusValue("error")) {
+                isLastUpdate = true;
+                formRef.off('child_changed', onValueChange);
+            }
 
-        statusHandler(newStatus, {...formData, "@status": newStatus, "@docPath": docPath}, isLastUpdate);
-        currentStatus = newStatus;
-    });
+            statusHandler(newStatus, {...formData, "@status": newStatus}, isLastUpdate);
+            currentStatus = newStatus;
+        });
 
     return {
         cancel: async () => {
@@ -58,7 +81,7 @@ export async function submitForm(
             if (delay){
                 if (currentStatus === getStatusValue("delay")) {
                     console.log("Cancelling form");
-                    await update(formRef, {"@status": getStatusValue("cancel")});
+                    await formRef.update({"@status": getStatusValue("cancel")});
                     return true;
                 } else {
                     console.log("Delay has elapsed.  Can't cancel form");
