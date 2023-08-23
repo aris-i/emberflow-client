@@ -35,10 +35,11 @@ const formRefMock = {
 const dbRefMock = jest.fn();
 jest.mock('firebase-admin', () => ({
     __esModule: true,
-    initializeApp: jest.fn(),
-    database: jest.fn(() => {
-        return formRefMock;
-    }),
+    initializeApp: jest.fn(() => ({
+        database: jest.fn(() => {
+            return formRefMock;
+        }),
+    })),
 }));
 
 const adminInstance = admin.initializeApp();
