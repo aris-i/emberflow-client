@@ -49,9 +49,25 @@ export async function submitForm(
             off(formRef, 'child_changed', onValueChange);
         }
 
-        statusHandler(newStatus, {...formData, "@status": newStatus}, isLastUpdate);
-        currentStatus = newStatus;
-    });
+            let messages;
+            if(newStatus === getStatusValue("validation-error")
+                || newStatus === getStatusValue("security-error")
+                || newStatus === getStatusValue("error")
+            ) {
+                formRef.once('value', (data) => {
+                    const currData = data.val();
+                    if(currData["@messages"]) {
+                        messages = currData["@messages"];
+                    }
+                });
+            }
+            statusHandler(
+                newStatus,
+                {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
+                isLastUpdate
+            );
+            currentStatus = newStatus;
+        });
 
     return {
         cancel: async () => {
