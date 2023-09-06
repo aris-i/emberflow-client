@@ -140,6 +140,7 @@ describe('submitForm', () => {
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'validation-error'];
+        await submitForm(formData, statusHandlerMock);
         runCallback();
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
         expect(formRefMock.set)
@@ -157,6 +158,7 @@ describe('submitForm', () => {
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'security-error'];
+        await submitForm(formData, statusHandlerMock);
         runCallback();
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
         expect(formRefMock.set)
