@@ -1,5 +1,5 @@
 import {FormData, FormStatus, FormStatusHandler} from "./types";
-import {getDatabase, Database, push, ref, set, onChildChanged, off, update} from "firebase/database";
+import {getDatabase, Database, push, ref, set, onChildChanged, off, update, get} from "firebase/database";
 import {FirebaseApp} from "firebase/app";
 
 let db: Database;
@@ -28,7 +28,7 @@ export async function submitForm(
         formData: JSON.stringify(formData),
     });
     let currentStatus = getStatusValue("submit");
-    const onValueChange = onChildChanged(formRef, (snapshot) => {
+    const onValueChange = onChildChanged(formRef, async (snapshot) => {
         const changedVal = snapshot.val();
         const changedKey = snapshot.key;
         if (!changedKey) {
@@ -49,25 +49,28 @@ export async function submitForm(
             off(formRef, 'child_changed', onValueChange);
         }
 
-            let messages;
-            if(newStatus === getStatusValue("validation-error")
-                || newStatus === getStatusValue("security-error")
-                || newStatus === getStatusValue("error")
-            ) {
-                formRef.once('value', (data) => {
-                    const currData = data.val();
-                    if(currData["@messages"]) {
-                        messages = currData["@messages"];
-                    }
-                });
+        let messages;
+        if(newStatus === getStatusValue("validation-error")
+            || newStatus === getStatusValue("security-error")
+            || newStatus === getStatusValue("error")
+        ) {
+            const currData = await get(formRef);
+            if (currData.exists()) {
+                const currFormData = currData.val();
+                if(currFormData["@messages"]) {
+                    messages = currFormData["@messages"];
+                }
             }
-            statusHandler(
-                newStatus,
-                {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
-                isLastUpdate
-            );
-            currentStatus = newStatus;
-        });
+        }
+
+        // TODO: THIS IS CALLED MULTIP[LE TIMES BUT ONLY HAS 1 RECORD
+        statusHandler(
+            newStatus,
+            {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
+            isLastUpdate
+        );
+        currentStatus = newStatus;
+    });
 
     return {
         cancel: async () => {
