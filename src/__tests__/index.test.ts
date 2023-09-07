@@ -11,9 +11,9 @@ const formData : FormData = {
 };
 let statusTransition = ['submitted'];
 let _callback : Function;
-function runCallback() {
+async function runCallback() {
     for (const status of statusTransition) {
-        _callback({
+        await _callback({
             val: jest.fn(() => (status)),
             key: "@status",
         });
@@ -73,7 +73,7 @@ describe('submitForm', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['submitted', 'finished'];
         let cancelForm = await submitForm(formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
         expect(ref).toHaveBeenCalledTimes(1);
@@ -98,7 +98,7 @@ describe('submitForm', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['submitted'];
         let cancelForm = await submitForm(formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
     });
@@ -112,7 +112,7 @@ describe('submitForm', () => {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(true);
         expect(update).toHaveBeenCalledWith(onReturnMock, {"@status": "cancel"});
@@ -128,7 +128,7 @@ describe('submitForm', () => {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
         expect(update).not.toHaveBeenCalledWith();
@@ -140,7 +140,7 @@ describe('submitForm', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['delay', 'submitted'];
         let form = await submitForm(formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
         await form.unsubscribe();
         expect(off).toHaveBeenCalled();
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", onReturnMock );
@@ -152,7 +152,7 @@ describe('submitForm', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'validation-error'];
         let cancelForm = await submitForm(formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
         expect(ref).toHaveBeenCalledTimes(1);
@@ -178,7 +178,7 @@ describe('submitForm', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'security-error'];
         await submitForm(formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
         expect(ref).toHaveBeenCalledTimes(1);
         expect(set)
@@ -218,7 +218,7 @@ describe('submitForm with custom status map', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['Submitted', 'Finished'];
         let cancelForm = await submitForm( formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
         expect(ref).toHaveBeenCalledTimes(1);
@@ -243,7 +243,7 @@ describe('submitForm with custom status map', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['Submitted'];
         let cancelForm = await submitForm( formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
     });
@@ -257,7 +257,7 @@ describe('submitForm with custom status map', () => {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(true);
         expect(update).toHaveBeenCalledWith(onReturnMock, {"@status": "Cancel"});
@@ -272,7 +272,7 @@ describe('submitForm with custom status map', () => {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
         expect(update).not.toHaveBeenCalledWith();
@@ -284,7 +284,7 @@ describe('submitForm with custom status map', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['Delay', 'Submitted'];
         let form = await submitForm( formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
         await form.unsubscribe();
         expect(off).toHaveBeenCalled();
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", onReturnMock );

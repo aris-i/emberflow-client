@@ -63,7 +63,6 @@ export async function submitForm(
             }
         }
 
-        // TODO: THIS IS CALLED MULTIP[LE TIMES BUT ONLY HAS 1 RECORD
         statusHandler(
             newStatus,
             {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
