@@ -54,12 +54,13 @@ describe('submitForm', () => {
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         statusTransition = ['submitted', 'finished'];
-        let cancelForm = await submitForm(formData, statusHandlerMock);
+        let submittedForm = await submitForm(formData, statusHandlerMock);
         runCallback();
 
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
-        expect(cancelForm).toBeDefined();
-        expect(typeof cancelForm.cancel).toBe('function');
+        expect(submittedForm).toBeDefined();
+        expect(typeof submittedForm.cancel).toBe('function');
+        expect(typeof submittedForm.unsubscribe).toBe('function');
         expect(formRefMock.set)
             .toHaveBeenCalledWith({ formData: JSON.stringify(formData), "@status": "submit"});
         expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));

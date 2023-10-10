@@ -3,8 +3,15 @@ import {FormData, FormStatus, FormStatusHandler} from "./types";
 
 let db: FirebaseDatabaseTypes.Module;
 let statusMap: Record<FormStatus, string>;
+let DEFAULT_TIMEOUT = 60000;
 
-export function initClient(databaseName: string, region: string, _statusMap?: Record<FormStatus, string>) {
+export function initClient(
+    databaseName: string,
+    region: string,
+    _statusMap?: Record<FormStatus, string>,
+    defaultTimeout?: number
+) {
+    DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
     db = firebase
         .app()
         .database(`https://${databaseName}.${region}.firebasedatabase.app/`);
@@ -14,8 +21,45 @@ export function initClient(databaseName: string, region: string, _statusMap?: Re
 }
 export async function submitForm(
     formData: FormData,
-    statusHandler: FormStatusHandler
+    statusHandler: FormStatusHandler,
+    timeout?: number
 ) {
+    function isTerminalState(status: FormStatus) {
+        return status === getStatusValue("finished")
+            || status === getStatusValue("cancelled")
+            || status === getStatusValue("validation-error")
+            || status === getStatusValue("security-error")
+            || status === getStatusValue("error");
+    }
+
+    function startTimeoutMonitor() {
+        setTimeout(async () => {
+            if (isLastUpdate) {
+                return;
+            }
+
+            formRef.off('child_changed', onValueChange);
+
+            const snapshot = await formRef.once('value');
+            const formData = snapshot.val();
+            let newStatus = formData["@status"];
+            isLastUpdate = true;
+            if (isTerminalState(newStatus)) {
+                statusHandler(newStatus, {
+                    ...formData,
+                    "@status": newStatus,
+                }, isLastUpdate);
+            } else {
+                newStatus = getStatusValue("error");
+                statusHandler(newStatus, {
+                    ...formData,
+                    "@status": newStatus,
+                    "@message": "timeout waiting for last status update"
+                }, isLastUpdate);
+            }
+        }, timeout || DEFAULT_TIMEOUT);
+    }
+
     // get the second element and last element from docPath split by "/"
     const userId = formData["@docPath"].split("/")[1];
 
@@ -25,6 +69,10 @@ export async function submitForm(
         formData: JSON.stringify(formData),
     });
     let currentStatus = getStatusValue("submit");
+    let isLastUpdate = false;
+
+    startTimeoutMonitor();
+
     const onValueChange = formRef
         .on('child_changed', snapshot => {
             const changedVal = snapshot.val();
@@ -38,11 +86,7 @@ export async function submitForm(
             }
 
             const newStatus = changedVal as FormStatus;
-            let isLastUpdate = false;
-            if (newStatus === getStatusValue("finished") || newStatus === getStatusValue("cancelled")
-                || newStatus === getStatusValue("validation-error")
-                || newStatus === getStatusValue("security-error")
-                || newStatus === getStatusValue("error")) {
+            if (isTerminalState(newStatus)) {
                 isLastUpdate = true;
                 formRef.off('child_changed', onValueChange);
             }
