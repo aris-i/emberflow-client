@@ -91,10 +91,24 @@ export async function submitForm(
             formRef.off('child_changed', onValueChange);
         }
 
-        statusHandler(newStatus, {...formData, "@status": newStatus}, isLastUpdate);
-
+        let messages;
+        if(newStatus === getStatusValue("validation-error")
+            || newStatus === getStatusValue("security-error")
+            || newStatus === getStatusValue("error")
+        ) {
+            formRef.once('value', (data) => {
+                const currData = data.val();
+                if(currData["@messages"]) {
+                    messages = currData["@messages"];
+                }
+            });
+        }
+        statusHandler(
+            newStatus,
+            {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
+            isLastUpdate
+        );
         currentStatus = newStatus;
-
     });
 
     startTimeoutMonitor();
