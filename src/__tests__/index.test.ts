@@ -131,62 +131,49 @@ describe('submitForm', () => {
         expect(formRefMock.off).toHaveBeenCalledWith("child_changed", onReturnMock);
     });
 
-    it('terminal state', async () => {
-        dbRefMock.mockReturnValue(formRefMock);
-        const statusHandlerMock = jest.fn();
-        statusTransition = ['submitted', 'finished'];
-        let submittedForm = await submitForm(formData, statusHandlerMock, 200);
-        runCallback();
-
-        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
-        expect(submittedForm).toBeDefined();
-        expect(typeof submittedForm.cancel).toBe('function');
-        expect(typeof submittedForm.unsubscribe).toBe('function');
-        expect(formRefMock.set)
-            .toHaveBeenCalledWith({formData: JSON.stringify(formData), "@status": "submit"});
-        expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
-        expect(statusHandlerMock).toHaveBeenCalledTimes(2);
-        expect(statusHandlerMock).toHaveBeenCalledWith('submitted',
-            {...formData, "@status": "submitted"}, false);
-        expect(statusHandlerMock).toHaveBeenCalledWith('finished',
-            {...formData, "@status": "finished"}, true);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
-
-        // const timeout = 1000;
-        // const submittedForm = await submitForm(formData, statusHandlerMock, timeout);
-        // runCallback();
-        //
-        // expect(submittedForm).toBeDefined();
-        // expect(statusHandlerMock).toHaveBeenCalledWith('submitted', {
-        //     ...formData,
-        //     "@status": 'submitted',
-        // }, false);
-        // expect(statusHandlerMock).toHaveBeenCalledWith('finished', {
-        //     ...formData,
-        //     "@status": 'finished',
-        // }, true);
-        //
-        // // Fast-forward time to invoke the setTimeout
-        // setTimeout(() => {
-        //     expect(submittedForm).toBeCalled();
-        //     expect(statusHandlerMock).toHaveBeenCalledTimes(3);
-        //     expect(statusHandlerMock).toHaveBeenCalledWith('error', {
-        //         ...formData,
-        //         "@message": "timeout waiting for last status update",
-        //         "@status": 'error'
-        //     }, true);
-        //     expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
-        // }, timeout + 100)
-
-    });
-
-    it("non terminal state", async () => {
-        statusTransition = ['submit', 'submitted'];
+    it("should return an error status and a message when submitForm reaches the timeout, and the status is not in a terminal state", async () => {
+        jest.useFakeTimers();
+        statusTransition = ['submit', 'submitted', 'delay'];
+        statusAtTimeout = {"@status": statusTransition[statusTransition.length - 1]};
         const timeout = 1000;
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
-        let submittedForm = await submitForm(formData, statusHandlerMock, timeout);
+        const submittedForm = await submitForm(formData, statusHandlerMock, timeout);
+        runCallback();
+
+        expect(submittedForm).toBeDefined();
+        expect(statusHandlerMock).toHaveBeenCalledWith('submit', {
+            ...formData,
+            "@status": 'submit',
+        }, false);
+        expect(statusHandlerMock).toHaveBeenCalledWith('submitted', {
+            ...formData,
+            "@status": 'submitted',
+        }, false);
+        expect(statusHandlerMock).toHaveBeenCalledWith('delay', {
+            ...formData,
+            "@status": 'delay',
+        }, false);
+
+        await jest.advanceTimersByTime(timeout);
+
+        expect(statusHandlerMock).toHaveBeenCalledTimes(4);
+        expect(statusHandlerMock).toHaveBeenCalledWith('error', {
+            "@status": 'error',
+            "@message": "timeout waiting for last status update",
+        }, true);
+        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+    })
+
+    it("should not return an error status and a message when submitForm reaches the timeout, and the status is a terminal state", async () => {
+        jest.useFakeTimers();
+        statusTransition = ['submit', 'submitted', 'finished'];
+        statusAtTimeout = {"@status": statusTransition[statusTransition.length - 1]};
+        const timeout = 1000;
+        dbRefMock.mockReturnValue(formRefMock);
+        const statusHandlerMock = jest.fn();
+        const submittedForm = await submitForm(formData, statusHandlerMock, timeout);
         runCallback();
 
         expect(submittedForm).toBeDefined();
@@ -199,19 +186,17 @@ describe('submitForm', () => {
             "@status": 'submitted',
         }, false);
 
-        // Fast-forward time to invoke the setTimeout
-        setTimeout(async () => {
-            expect(submittedForm).toBeCalled();
-            expect(statusHandlerMock).toHaveBeenCalledTimes(3);
-            expect(statusHandlerMock).toHaveBeenCalledWith('error', {
-                ...formData,
-                "@message": "timeout waiting for last status update",
-                "@status": 'error'
-            }, true);
-            expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
-        }, timeout + 100)
+        await jest.advanceTimersByTime(timeout);
+        expect(statusHandlerMock).toHaveBeenCalledWith('finished', {
+            ...formData,
+            "@status": 'finished',
+        }, true);
+        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
     })
 
+    afterEach(() => {
+        jest.useRealTimers()
+    })
 });
 
 describe('submitForm with custom status map', () => {

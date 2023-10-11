@@ -52,9 +52,7 @@ export async function submitForm(
 
             // Indicate that this is the last update this function will handle
             isLastUpdate = true;
-            console.log("inside startTimeoutMonitor")
-            console.log("isLastUpdate ", isLastUpdate)
-            console.log("new status ", newStatus)
+
             // Check if the current status is a "terminal state" (e.g., finished, canceled, or an error)
             if (isTerminalState(newStatus)) {
                 // If it's a terminal state, update the status and notify the handler
@@ -72,6 +70,7 @@ export async function submitForm(
                     "@message": "timeout waiting for last status update"
                 }, isLastUpdate);
             }
+            console.log("Inside startTimeoutMonitor\nformData: " + formData + "\n@status: " + newStatus + "\nisLastUpdate: " + isLastUpdate + "\nisTerminalState: " + isTerminalState(newStatus))
         }, timeout || DEFAULT_TIMEOUT);
     }
 
@@ -105,9 +104,7 @@ export async function submitForm(
 
         // Extract the new status value as a FormStatus
         const newStatus = changedVal as FormStatus;
-        console.log("outside startTimeoutMonitor")
-        console.log("isLastUpdate ", isLastUpdate)
-        console.log("new status ", newStatus)
+        console.log("Outside startTimeoutMonitor\nformData: " + formData + "\n@status: " + newStatus + "\nisLastUpdate: " + isLastUpdate + "\nisTerminalState: " + isTerminalState(newStatus))
         // Check if the new status is a "terminal state" (e.g., finished, canceled, or an error)
         if (isTerminalState(newStatus)) {
             // If it's a terminal state, mark this as the last update and turn off the listener
