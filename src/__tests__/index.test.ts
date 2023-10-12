@@ -235,6 +235,42 @@ describe('submitForm', () => {
         statusTransition = ['submit', 'submitted', 'finished'];
         statusAtTimeout = {"@status": statusTransition[statusTransition.length - 1]};
         const timeout = 1000;
+
+        async function runCallback() {
+            for (const status of statusTransition) {
+                const index = statusTransition.indexOf(status);
+                const isLastItem = index === statusTransition.length - 1;
+
+                if (isLastItem) {
+                    await jest.advanceTimersByTime(timeout)
+                    _callback({
+                        val: jest.fn(() => status),
+                        key: "@status",
+                    });
+                } else {
+                    _callback({
+                        val: jest.fn(() => status),
+                        key: "@status",
+                    });
+                }
+            }
+        }
+
+        const formRefMock = {
+            key: 'testDocId',
+            set: jest.fn((formData: any) => {
+                _formData = formData;
+            }),
+            push: jest.fn().mockReturnThis(),
+            once: jest.fn().mockResolvedValue({val: jest.fn().mockReturnValue({...formData, ...statusAtTimeout})}),
+            on: jest.fn((eventType: string, callback: Function) => {
+                _callback = callback;
+                return onReturnMock;
+            }),
+            off: jest.fn(),
+            update: jest.fn(),
+        };
+
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitForm(formData, statusHandlerMock, timeout);
