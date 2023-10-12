@@ -40,7 +40,7 @@ export async function submitForm(
 
             formRef.off('child_changed', onValueChange);
             const snapshot = await formRef.once('value');
-            const formData = snapshot.val(); // Extract the data from the snapshot
+            const formData = snapshot.val();
 
             let newStatus = formData["@status"];
             console.log("check formData: ", JSON.stringify(formData))

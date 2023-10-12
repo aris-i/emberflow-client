@@ -29,7 +29,6 @@ const formRefMock = {
         _formData = formData;
     }),
     push: jest.fn().mockReturnThis(),
-    // once: jest.fn().mockResolvedValue({val: jest.fn().mockReturnValue(statusAtTimeout)}),
     on: jest.fn((eventType: string, callback: Function) => {
         _callback = callback;
         return onReturnMock;
