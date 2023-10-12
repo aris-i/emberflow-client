@@ -43,6 +43,7 @@ export async function submitForm(
             const formData = snapshot.val(); // Extract the data from the snapshot
 
             let newStatus = formData["@status"];
+            console.log("check formData: ", JSON.stringify(formData))
 
             isLastUpdate = true;
 
@@ -59,7 +60,7 @@ export async function submitForm(
                     "@message": "timeout waiting for last status update"
                 }, isLastUpdate);
             }
-            console.log("Inside startTimeoutMonitor\nformData: " + formData + "\n@status: " + newStatus + "\nisLastUpdate: " + isLastUpdate + "\nisTerminalState: " + isTerminalState(newStatus))
+            console.log("Inside startTimeoutMonitor\nformData: " + JSON.stringify(formData) + "\n@status: " + newStatus + "\nisLastUpdate: " + isLastUpdate + "\nisTerminalState: " + isTerminalState(newStatus))
         }, timeout || DEFAULT_TIMEOUT);
     }
 
@@ -84,7 +85,7 @@ export async function submitForm(
         }
 
         const newStatus = changedVal as FormStatus;
-        console.log("Outside startTimeoutMonitor\nformData: " + formData + "\n@status: " + newStatus + "\nisLastUpdate: " + isLastUpdate + "\nisTerminalState: " + isTerminalState(newStatus))
+        console.log("Outside startTimeoutMonitor\nformData: " + JSON.stringify(formData) + "\n@status: " + newStatus + "\nisLastUpdate: " + isLastUpdate + "\nisTerminalState: " + isTerminalState(newStatus))
         // Check if the new status is a "terminal state" (e.g., finished, canceled, or an error)
         if (isTerminalState(newStatus)) {
             isLastUpdate = true;
@@ -92,13 +93,13 @@ export async function submitForm(
         }
 
         let messages;
-        if(newStatus === getStatusValue("validation-error")
+        if (newStatus === getStatusValue("validation-error")
             || newStatus === getStatusValue("security-error")
             || newStatus === getStatusValue("error")
         ) {
             formRef.once('value', (data) => {
                 const currData = data.val();
-                if(currData["@messages"]) {
+                if (currData["@messages"]) {
                     messages = currData["@messages"];
                 }
             });
