@@ -41,7 +41,7 @@ export async function submitForm(
 
             off(formRef, 'child_changed', onValueChange);
             // TODO: fix this implementation
-            const snapshot = await formRef.once('value');
+            const snapshot = await get(formRef);
             const formData = snapshot.val();
 
             let newStatus = formData["@status"];
