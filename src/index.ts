@@ -85,7 +85,6 @@ export async function submitForm(
         }
 
         const newStatus = changedVal as FormStatus;
-        console.log("Outside startTimeoutMonitor\nformData: " + JSON.stringify(formData) + "\n@status: " + newStatus + "\nisLastUpdate: " + isLastUpdate + "\nisTerminalState: " + isTerminalState(newStatus))
         // Check if the new status is a "terminal state" (e.g., finished, canceled, or an error)
         if (isTerminalState(newStatus)) {
             isLastUpdate = true;
