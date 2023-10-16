@@ -86,6 +86,7 @@ export async function submitForm(
 
         const newStatus = changedVal as FormStatus;
         let isLastUpdate = false;
+
         // Check if the new status is a "terminal state" (e.g., finished, canceled, or an error)
         if (isTerminalState(newStatus)) {
             isLastUpdate = true;
