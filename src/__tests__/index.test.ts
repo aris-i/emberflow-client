@@ -1,6 +1,6 @@
 import {initClient, submitForm} from '../index';
 import {FormData} from '../types';
-import {off, onChildChanged, ref, set, update, get} from "firebase/database";
+import {get, off, onChildChanged, ref, set, update} from "firebase/database";
 import {initializeApp} from "firebase/app";
 
 // Mock the firebase database module
@@ -33,10 +33,6 @@ const formRefMock = {
 
 const dbRefMock = jest.fn();
 jest.mock('firebase/database', () => {
-    const generateDynamicValue = () => {
-        return mockGetVal;
-    };
-
     return {
         __esModule: true,
         set: jest.fn((formData: any) => {
@@ -59,9 +55,12 @@ jest.mock('firebase/database', () => {
         }),
         off: jest.fn(),
         get: jest.fn().mockResolvedValue({
-            exists: jest.fn().mockReturnValue(true),
-            val: jest.fn().mockImplementation(generateDynamicValue),
-        }),
+                exists: jest.fn().mockReturnValue(true),
+                val: jest.fn().mockImplementation(() => {
+                    return mockGetVal
+                }),
+            }
+        ),
     }
 });
 
@@ -81,6 +80,7 @@ describe('submitForm', () => {
             'https://testDatabaseName.testRegion.firebasedatabase.app',
         );
     });
+
     it('should set form data and listen for status changes', async () => {
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
@@ -213,7 +213,7 @@ describe('submitForm with timeout', () => {
             'https://testDatabaseName.testRegion.firebasedatabase.app',
         );
     });
-    
+
     it("should return an error status and a message when submitForm reaches the timeout, and the status is not in a terminal state", async () => {
         jest.useFakeTimers();
 
