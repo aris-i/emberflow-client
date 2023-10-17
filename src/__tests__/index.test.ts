@@ -11,7 +11,6 @@ const formData: FormData = {
 };
 
 let statusTransition = ['submitted'];
-let statusAtTimeout = {'@status': 'submitted'};
 let mockGetVal: any = {"@messages": {name: "Invalid"}};
 
 let _callback: Function;
@@ -219,8 +218,7 @@ describe('submitForm with timeout', () => {
 
         const timeout = 5000;
         statusTransition = ['submit', 'submitted', 'delay'];
-        statusAtTimeout = {"@status": statusTransition[statusTransition.length - 1]};
-        mockGetVal = {...formData, ...statusAtTimeout};
+        mockGetVal = {...formData, "@status": statusTransition[statusTransition.length - 1]};
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
@@ -255,8 +253,7 @@ describe('submitForm with timeout', () => {
     it("should not return an error status and a message when submitForm reaches the timeout, and the status is in a terminal state", async () => {
         jest.useFakeTimers();
         statusTransition = ['submit', 'submitted', 'finished'];
-        statusAtTimeout = {"@status": statusTransition[statusTransition.length - 1]};
-        mockGetVal = {...formData, ...statusAtTimeout};
+        mockGetVal = {...formData, "@status": statusTransition[statusTransition.length - 1]};
         const timeout = 1000;
 
         dbRefMock.mockReturnValue(formRefMock);
@@ -286,8 +283,7 @@ describe('submitForm with timeout', () => {
     it("should return a final update when submitForm reaches the timeout, and the status is in a terminal state", async () => {
         jest.useFakeTimers();
         statusTransition = ['submit', 'submitted'];
-        statusAtTimeout = {"@status": 'finished'};
-        mockGetVal = {...formData, ...statusAtTimeout};
+        mockGetVal = {...formData, "@status": 'finished'};
         const timeout = 1000;
 
         dbRefMock.mockReturnValue(formRefMock);

@@ -1,5 +1,5 @@
 import {FormData, FormStatus, FormStatusHandler} from "./types";
-import {getDatabase, Database, push, ref, set, onChildChanged, off, update, get} from "firebase/database"
+import {getDatabase, Database, push, ref, set, onChildChanged, off, update, get} from "firebase/database";
 import {FirebaseApp} from "firebase/app";
 
 let db: Database;
