@@ -1,6 +1,6 @@
 import {initClient, submitForm} from '../index';
 import {FormData} from '../types';
-import {get, off, onChildChanged, ref, set, update} from "firebase/database";
+import {off, onChildChanged, ref, set, update, get} from "firebase/database";
 import {initializeApp} from "firebase/app";
 
 // Mock the firebase database module
