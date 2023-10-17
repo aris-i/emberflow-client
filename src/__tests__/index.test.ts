@@ -9,8 +9,10 @@ const formData: FormData = {
     "@docPath": "forms/testUserId/testDocId",
     "name": 'testName',
 };
+
 let statusTransition = ['submitted'];
 let statusAtTimeout = {'@status': 'submitted'};
+let mockGetVal: any = {"@messages": {name: "Invalid"}};
 
 let _callback: Function;
 let _formData: FormData;
@@ -30,35 +32,38 @@ const formRefMock = {
 };
 
 const dbRefMock = jest.fn();
+jest.mock('firebase/database', () => {
+    const generateDynamicValue = () => {
+        return mockGetVal;
+    };
 
-jest.mock('firebase/database', () => ({
-    __esModule: true,
-    set: jest.fn((formData: any) => {
-        _formData = formData;
-    }),
-    update: jest.fn(),
-    onChildChanged: jest.fn((query: any, callback: Function) => {
-        _callback = callback;
-        return onReturnMock;
-    }),
-    push: jest.fn(() => {
-        return onReturnMock;
-    }),
-    ref: jest.fn(() => {
-        return onReturnMock;
-    }),
-    getDatabase: jest.fn((dbRef: any) => {
-        dbRefMock(dbRef);
-        return formRefMock;
-    }),
-    off: jest.fn(),
-    get: jest.fn().mockResolvedValue({
-        exists: jest.fn().mockReturnValue(true),
-        val: jest.fn().mockReturnValue({
-            "@messages": {name: "Invalid"},
+    return {
+        __esModule: true,
+        set: jest.fn((formData: any) => {
+            _formData = formData;
         }),
-    }),
-}));
+        update: jest.fn(),
+        onChildChanged: jest.fn((query: any, callback: Function) => {
+            _callback = callback;
+            return onReturnMock;
+        }),
+        push: jest.fn(() => {
+            return onReturnMock;
+        }),
+        ref: jest.fn(() => {
+            return onReturnMock;
+        }),
+        getDatabase: jest.fn((dbRef: any) => {
+            dbRefMock(dbRef);
+            return formRefMock;
+        }),
+        off: jest.fn(),
+        get: jest.fn().mockResolvedValue({
+            exists: jest.fn().mockReturnValue(true),
+            val: jest.fn().mockImplementation(generateDynamicValue),
+        }),
+    }
+});
 
 jest.mock('@firebase/app', () => ({
     __esModule: true,
@@ -208,16 +213,14 @@ describe('submitForm with timeout', () => {
             'https://testDatabaseName.testRegion.firebasedatabase.app',
         );
     });
-
-    const valMock = jest.fn()
-
+    
     it("should return an error status and a message when submitForm reaches the timeout, and the status is not in a terminal state", async () => {
         jest.useFakeTimers();
 
         const timeout = 5000;
         statusTransition = ['submit', 'submitted', 'delay'];
         statusAtTimeout = {"@status": statusTransition[statusTransition.length - 1]};
-        valMock.mockReturnValueOnce({...formData, ...statusAtTimeout});
+        mockGetVal = {...formData, ...statusAtTimeout};
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
@@ -249,17 +252,17 @@ describe('submitForm with timeout', () => {
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", onReturnMock);
     })
 
-    it("should not return an error status and a message when submitForm reaches the timeout, and the status is a terminal state", async () => {
+    it("should not return an error status and a message when submitForm reaches the timeout, and the status is in a terminal state", async () => {
         jest.useFakeTimers();
         statusTransition = ['submit', 'submitted', 'finished'];
         statusAtTimeout = {"@status": statusTransition[statusTransition.length - 1]};
-        valMock.mockReturnValueOnce({...formData, ...statusAtTimeout});
+        mockGetVal = {...formData, ...statusAtTimeout};
         const timeout = 1000;
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitForm(formData, statusHandlerMock, timeout);
-        runCallback();
+        await runCallback();
 
         expect(submittedForm).toBeDefined();
         expect(statusHandlerMock).toHaveBeenCalledWith('submit', {
@@ -270,14 +273,13 @@ describe('submitForm with timeout', () => {
             ...formData,
             "@status": 'submitted',
         }, false);
-
         expect(statusHandlerMock).toHaveBeenCalledWith('finished', {
             ...formData,
             "@status": 'finished',
         }, true);
 
         await jest.advanceTimersByTime(timeout);
-        expect(statusHandlerMock).toHaveBeenCalledTimes(3);
+        expect(statusHandlerMock).toHaveBeenCalledTimes(4);
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", onReturnMock);
     })
 
@@ -285,13 +287,13 @@ describe('submitForm with timeout', () => {
         jest.useFakeTimers();
         statusTransition = ['submit', 'submitted'];
         statusAtTimeout = {"@status": 'finished'};
-        valMock.mockReturnValueOnce({...formData, ...statusAtTimeout});
+        mockGetVal = {...formData, ...statusAtTimeout};
         const timeout = 1000;
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitForm(formData, statusHandlerMock, timeout);
-        runCallback();
+        await runCallback();
 
         expect(submittedForm).toBeDefined();
         expect(statusHandlerMock).toHaveBeenCalledWith('submit', {

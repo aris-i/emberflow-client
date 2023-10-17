@@ -19,7 +19,6 @@ export function initClient(
     }
 }
 
-
 export async function submitForm(
     formData: FormData,
     statusHandler: FormStatusHandler,
@@ -40,13 +39,11 @@ export async function submitForm(
             }
 
             off(formRef, 'child_changed', onValueChange);
-            // TODO: fix this implementation
+
             const snapshot = await get(formRef);
             const formData = snapshot.val();
 
             let newStatus = formData["@status"];
-            console.log("check formData: ", JSON.stringify(formData))
-
             isLastUpdate = true;
 
             if (isTerminalState(newStatus)) {
@@ -62,7 +59,6 @@ export async function submitForm(
                     "@message": "timeout waiting for last status update"
                 }, isLastUpdate);
             }
-            console.log("Inside startTimeoutMonitor\nformData: " + JSON.stringify(formData) + "\n@status: " + newStatus + "\nisLastUpdate: " + isLastUpdate + "\nisTerminalState: " + isTerminalState(newStatus))
         }, timeout || DEFAULT_TIMEOUT);
     }
 
