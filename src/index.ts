@@ -39,11 +39,12 @@ export async function submitForm(
             }
 
             formRef.off('child_changed', onValueChange);
+
             const snapshot = await formRef.once('value');
+
             const formData = snapshot.val();
 
             let newStatus = formData["@status"];
-            console.log("check formData: ", JSON.stringify(formData))
 
             isLastUpdate = true;
 
@@ -60,7 +61,6 @@ export async function submitForm(
                     "@message": "timeout waiting for last status update"
                 }, isLastUpdate);
             }
-            console.log("Inside startTimeoutMonitor\nformData: " + JSON.stringify(formData) + "\n@status: " + newStatus + "\nisLastUpdate: " + isLastUpdate + "\nisTerminalState: " + isTerminalState(newStatus))
         }, timeout || DEFAULT_TIMEOUT);
     }
 
@@ -74,6 +74,7 @@ export async function submitForm(
     });
 
     let currentStatus = getStatusValue("submit");
+
     let isLastUpdate = false;
 
     const onValueChange = formRef.on('child_changed', snapshot => {
@@ -85,13 +86,14 @@ export async function submitForm(
         }
 
         const newStatus = changedVal as FormStatus;
-        // Check if the new status is a "terminal state" (e.g., finished, canceled, or an error)
+
         if (isTerminalState(newStatus)) {
             isLastUpdate = true;
             formRef.off('child_changed', onValueChange);
         }
 
         let messages;
+
         if (newStatus === getStatusValue("validation-error")
             || newStatus === getStatusValue("security-error")
             || newStatus === getStatusValue("error")
