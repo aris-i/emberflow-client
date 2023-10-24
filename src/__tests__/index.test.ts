@@ -63,7 +63,7 @@ jest.mock('@react-native-firebase/database', () => ({
 
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient('testDatabaseName', 'testRegion');
+        initClient('testDatabaseName');
     });
     it('should set form data and listen for status changes', async () => {
         dbRefMock.mockReturnValue(formRefMock);
@@ -178,9 +178,9 @@ describe('submitForm', () => {
     });
 });
 
-describe('submitForm with timeout', ()=>{
+describe('submitForm with timeout', () => {
     beforeAll(() => {
-        initClient('testDatabaseName', 'testRegion');
+        initClient('testDatabaseName');
     });
 
     const valMock = jest.fn();
@@ -306,7 +306,7 @@ describe('submitForm with custom status map', () => {
     beforeAll(() => {
         jest.clearAllMocks();
         initClient(
-            'testDatabaseName', 'testRegion',
+            'testDatabaseName',
             {
                 "submit": "Submit",
                 "delay": "Delay",

@@ -6,19 +6,19 @@ let statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
 export function initClient(
-    databaseName: string,
-    region: string,
+    rtdbUrl: string,
     _statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
     DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
     db = firebase
         .app()
-        .database(`https://${databaseName}.${region}.firebasedatabase.app/`);
+        .database(rtdbUrl);
     if (_statusMap) {
         statusMap = _statusMap;
     }
 }
+
 export async function submitForm(
     formData: FormData,
     statusHandler: FormStatusHandler,
