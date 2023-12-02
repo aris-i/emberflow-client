@@ -18,7 +18,7 @@ export function initClient(
     }
 }
 
-export async function submitForm(
+export async function submitCancellableForm(
     formData: FormData,
     statusHandler: FormStatusHandler,
     timeout?: number
@@ -136,6 +136,21 @@ export async function submitForm(
         }
     }
 }
+
+export function submitForm(formData: FormData) {
+    return new Promise<FormData>((resolve) => {
+        submitCancellableForm(
+            formData,
+            (status: FormStatus, data: FormData, isLastUpdate: boolean) => {
+                console.log("status", status, "data", data, "isLastUpdate", isLastUpdate);
+                if (isLastUpdate) {
+                    resolve(data);
+                }
+            }
+        );
+    });
+}
+
 
 export function getStatusValue(statusKey: FormStatus): string {
     return statusMap ? (statusMap[statusKey] || statusKey) : statusKey;
