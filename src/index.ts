@@ -142,7 +142,6 @@ export function submitForm(formData: FormData) {
         submitCancellableForm(
             formData,
             (status: FormStatus, data: FormData, isLastUpdate: boolean) => {
-                console.log("status", status, "data", data, "isLastUpdate", isLastUpdate);
                 if (isLastUpdate) {
                     resolve(data);
                 }
