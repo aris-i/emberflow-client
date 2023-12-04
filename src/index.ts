@@ -19,11 +19,11 @@ export function initClient(
     }
 }
 
-export async function submitForm(
+export const submitCancellableForm = async (
     formData: FormData,
-    statusHandler: FormStatusHandler,
+    statusHandler?: FormStatusHandler,
     timeout?: number
-) {
+) => {
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
             || status === getStatusValue("cancelled")
@@ -48,18 +48,20 @@ export async function submitForm(
 
             isLastUpdate = true;
 
-            if (isTerminalState(newStatus)) {
-                statusHandler(newStatus, {
-                    ...formData,
-                    "@status": newStatus,
-                }, isLastUpdate);
-            } else {
-                newStatus = getStatusValue("error");
-                statusHandler(newStatus, {
-                    ...formData,
-                    "@status": newStatus,
-                    "@message": "timeout waiting for last status update"
-                }, isLastUpdate);
+            if (statusHandler) {
+                if (isTerminalState(newStatus)) {
+                    statusHandler(newStatus, {
+                        ...formData,
+                        "@status": newStatus,
+                    }, isLastUpdate);
+                } else {
+                    newStatus = getStatusValue("error");
+                    statusHandler(newStatus, {
+                        ...formData,
+                        "@status": newStatus,
+                        "@message": "timeout waiting for last status update"
+                    }, isLastUpdate);
+                }
             }
         }, timeout || DEFAULT_TIMEOUT);
     }
@@ -105,11 +107,14 @@ export async function submitForm(
                 }
             });
         }
-        statusHandler(
-            newStatus,
-            {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
-            isLastUpdate
-        );
+
+        if (statusHandler) {
+            statusHandler(
+                newStatus,
+                {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
+                isLastUpdate
+            );
+        }
         currentStatus = newStatus;
     });
 
@@ -136,6 +141,19 @@ export async function submitForm(
             formRef.off('child_changed', onValueChange);
         }
     }
+}
+
+export function submitForm(formData: FormData) {
+    return new Promise<FormData>((resolve) => {
+        submitCancellableForm(
+            formData,
+            (status, data, isLastUpdate) => {
+                if (isLastUpdate) {
+                    resolve(data);
+                }
+            }
+        );
+    });
 }
 
 export function getStatusValue(statusKey: FormStatus): string {
