@@ -427,7 +427,6 @@ describe('submitForm', () => {
     });
 
     it('should return formData with @status', async () => {
-        const finalFormData = {"@status": "finished", ...formData};
         const submittedForm = await submitForm(formData);
 
         expect(submittedForm).toEqual(finalFormData);
