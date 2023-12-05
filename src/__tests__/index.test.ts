@@ -388,6 +388,7 @@ describe('submitCancellableForm with custom status map', () => {
 });
 
 let finalFormData = {"@status": "finished", ...formData};
+
 describe('submitForm', () => {
     beforeAll(() => {
         initClient(adminInstance);
@@ -403,7 +404,6 @@ describe('submitForm', () => {
     });
 
     it('should return formData with @status', async () => {
-        const finalFormData = {"@status": "finished", ...formData};
         const submittedForm = await submitForm(formData);
 
         expect(submittedForm).toEqual(finalFormData);
