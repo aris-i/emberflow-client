@@ -1,4 +1,5 @@
-import {initClient, submitCancellableForm} from '../index';
+import * as index from '../index';
+import {initClient, submitCancellableForm, submitForm} from '../index';
 import {FormData} from '../types';
 import * as admin from "firebase-admin";
 
@@ -48,7 +49,7 @@ const formRefMock = {
         if (callback) {
             callback(mockSnapshot);
         }
-        if (eventType === 'value'){
+        if (eventType === 'value') {
             return {val: valMock};
         }
     }),
@@ -383,5 +384,28 @@ describe('submitCancellableForm with custom status map', () => {
         await form.unsubscribe();
         expect(formRefMock.off).toHaveBeenCalled();
         expect(formRefMock.off).toHaveBeenCalledWith("child_changed", onReturnMock);
+    });
+});
+
+let finalFormData = {"@status": "finished", ...formData};
+
+describe('submitForm', () => {
+    beforeAll(() => {
+        initClient(adminInstance);
+        jest.spyOn(index, 'submitCancellableForm').mockImplementation((formData, statusHandler) => {
+            if (statusHandler) {
+                statusHandler('finished', finalFormData, true);
+            }
+            return {
+                cancel: jest.fn(),
+                unsubscribe: jest.fn(),
+            } as unknown as Promise<any>;
+        });
+    });
+
+    it('should return formData with @status', async () => {
+        const submittedForm = await submitForm(formData);
+
+        expect(submittedForm).toEqual(finalFormData);
     });
 });

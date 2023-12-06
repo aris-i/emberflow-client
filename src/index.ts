@@ -18,11 +18,11 @@ export function initClient(
     }
 }
 
-export async function submitCancellableForm(
+export const submitCancellableForm = async (
     formData: FormData,
-    statusHandler: FormStatusHandler,
+    statusHandler?: FormStatusHandler,
     timeout?: number
-) {
+) => {
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
             || status === getStatusValue("cancelled")
@@ -47,18 +47,20 @@ export async function submitCancellableForm(
 
             isLastUpdate = true;
 
-            if (isTerminalState(newStatus)) {
-                statusHandler(newStatus, {
-                    ...formData,
-                    "@status": newStatus,
-                }, isLastUpdate);
-            } else {
-                newStatus = getStatusValue("error");
-                statusHandler(newStatus, {
-                    ...formData,
-                    "@status": newStatus,
-                    "@message": "timeout waiting for last status update"
-                }, isLastUpdate);
+            if (statusHandler) {
+                if (isTerminalState(newStatus)) {
+                    statusHandler(newStatus, {
+                        ...formData,
+                        "@status": newStatus,
+                    }, isLastUpdate);
+                } else {
+                    newStatus = getStatusValue("error");
+                    statusHandler(newStatus, {
+                        ...formData,
+                        "@status": newStatus,
+                        "@message": "timeout waiting for last status update"
+                    }, isLastUpdate);
+                }
             }
         }, timeout || DEFAULT_TIMEOUT);
     }
@@ -104,11 +106,13 @@ export async function submitCancellableForm(
                 }
             });
         }
-        statusHandler(
-            newStatus,
-            {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
-            isLastUpdate
-        );
+        if (statusHandler) {
+            statusHandler(
+                newStatus,
+                {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
+                isLastUpdate
+            );
+        }
         currentStatus = newStatus;
     });
 
