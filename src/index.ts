@@ -1,5 +1,5 @@
 import {FormData, FormStatus, FormStatusHandler} from "./types";
-import {getDatabase, Database, push, ref, set, onChildChanged, off, update, get} from "firebase/database";
+import {Database, get, getDatabase, off, onChildChanged, push, ref, set, update} from "firebase/database";
 import {FirebaseApp} from "firebase/app";
 
 let db: Database;
@@ -19,11 +19,11 @@ export function initClient(
     }
 }
 
-export async function submitForm(
+export const submitCancellableForm = async (
     formData: FormData,
-    statusHandler: FormStatusHandler,
+    statusHandler?: FormStatusHandler,
     timeout?: number
-) {
+) => {
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
             || status === getStatusValue("cancelled")
@@ -46,18 +46,20 @@ export async function submitForm(
             let newStatus = formData["@status"];
             isLastUpdate = true;
 
-            if (isTerminalState(newStatus)) {
-                statusHandler(newStatus, {
-                    ...formData,
-                    "@status": newStatus,
-                }, isLastUpdate);
-            } else {
-                newStatus = getStatusValue("error");
-                statusHandler(newStatus, {
-                    ...formData,
-                    "@status": newStatus,
-                    "@message": "timeout waiting for last status update"
-                }, isLastUpdate);
+            if (statusHandler) {
+                if (isTerminalState(newStatus)) {
+                    statusHandler(newStatus, {
+                        ...formData,
+                        "@status": newStatus,
+                    }, isLastUpdate);
+                } else {
+                    newStatus = getStatusValue("error");
+                    statusHandler(newStatus, {
+                        ...formData,
+                        "@status": newStatus,
+                        "@message": "timeout waiting for last status update"
+                    }, isLastUpdate);
+                }
             }
         }, timeout || DEFAULT_TIMEOUT);
     }
@@ -90,24 +92,26 @@ export async function submitForm(
         }
 
         let messages;
-        if(newStatus === getStatusValue("validation-error")
+        if (newStatus === getStatusValue("validation-error")
             || newStatus === getStatusValue("security-error")
             || newStatus === getStatusValue("error")
         ) {
             const currData = await get(formRef);
             if (currData.exists()) {
                 const currFormData = currData.val();
-                if(currFormData["@messages"]) {
+                if (currFormData["@messages"]) {
                     messages = currFormData["@messages"];
                 }
             }
         }
 
-        statusHandler(
-            newStatus,
-            {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
-            isLastUpdate
-        );
+        if (statusHandler) {
+            statusHandler(
+                newStatus,
+                {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
+                isLastUpdate
+            );
+        }
         currentStatus = newStatus;
     });
 
@@ -134,6 +138,19 @@ export async function submitForm(
             off(formRef, 'child_changed', onValueChange);
         }
     }
+}
+
+export function submitForm(formData: FormData) {
+    return new Promise<FormData>((resolve) => {
+        submitCancellableForm(
+            formData,
+            (status, formData, isLastUpdate) => {
+                if (isLastUpdate) {
+                    resolve(formData);
+                }
+            }
+        );
+    });
 }
 
 export function getStatusValue(statusKey: FormStatus): string {
