@@ -8,6 +8,8 @@ const formData: FormData = {
     "@docPath": "forms/testUserId/testDocId",
     "name": 'testName',
 };
+
+let uid = 'testUserId';
 let statusTransition = ['submitted'];
 let statusAtTimeout = {'@status': 'submitted'};
 
@@ -64,7 +66,7 @@ jest.mock('@react-native-firebase/database', () => ({
 
 describe('submitCancellableForm', () => {
     beforeAll(() => {
-        initClient('testRtdbUrl');
+        initClient('testRtdbUrl', uid);
     });
     it('should set form data and listen for status changes', async () => {
         dbRefMock.mockReturnValue(formRefMock);
@@ -181,7 +183,7 @@ describe('submitCancellableForm', () => {
 
 describe('submitCancellableForm with timeout', () => {
     beforeAll(() => {
-        initClient('testRtdbUrl');
+        initClient('testRtdbUrl', uid);
     });
 
     const valMock = jest.fn();
@@ -308,6 +310,7 @@ describe('submitCancellableForm with custom status map', () => {
         jest.clearAllMocks();
         initClient(
             'testRtdbUrl',
+            uid,
             {
                 "submit": "Submit",
                 "delay": "Delay",
@@ -402,7 +405,7 @@ describe('submitCancellableForm with custom status map', () => {
 let finalFormData = {"@status": "finished", ...formData};
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient('testRtdbUrl');
+        initClient('testRtdbUrl', uid);
         jest.spyOn(index, 'submitCancellableForm').mockImplementation((formData, statusHandler) => {
             if (statusHandler) {
                 statusHandler('finished', finalFormData, true);

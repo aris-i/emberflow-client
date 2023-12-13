@@ -4,9 +4,11 @@ import {FormData, FormStatus, FormStatusHandler} from "./types";
 let db: FirebaseDatabaseTypes.Module;
 let statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
+let _uid: string;
 
 export function initClient(
     rtdbUrl: string,
+    uid: string,
     _statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
@@ -14,6 +16,8 @@ export function initClient(
     db = firebase
         .app()
         .database(rtdbUrl);
+    _uid = uid;
+
     if (_statusMap) {
         statusMap = _statusMap;
     }
@@ -66,9 +70,7 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const userId = formData["@docPath"].split("/")[1];
-
-    const formRef = db.ref(`forms/${userId}`).push();
+    const formRef = db.ref(`forms/${_uid}`).push();
 
     await formRef.set({
         "@status": getStatusValue("submit"),
