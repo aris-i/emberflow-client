@@ -4,14 +4,15 @@ import {FormData} from '../types';
 import {get, off, onChildChanged, ref, set, update} from "firebase/database";
 import {initializeApp} from "firebase/app";
 
+let uid = 'testUserId';
+
 // Mock the firebase database module
 const formData: FormData = {
     "@actionType": "create",
-    "@docPath": "forms/testUserId/testDocId",
+    "@docPath": `forms/${uid}/testDocId`,
     "name": 'testName',
 };
 
-let uid = 'testUserId';
 let statusTransition = ['submitted'];
 let mockGetVal: any = {"@messages": {name: "Invalid"}};
 
@@ -90,7 +91,7 @@ describe('submitCancellableForm', () => {
         let submittedForm = await submitCancellableForm(formData, statusHandlerMock, 200);
         await runCallback();
 
-        expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
+        expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
         expect(submittedForm).toBeDefined();
         expect(typeof submittedForm.cancel).toBe('function');
@@ -169,7 +170,7 @@ describe('submitCancellableForm', () => {
         let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
 
-        expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
+        expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
@@ -194,7 +195,7 @@ describe('submitCancellableForm', () => {
         statusTransition = ['submit', 'security-error'];
         await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
-        expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
+        expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
         expect(set)
             .toHaveBeenCalledWith(onReturnMock, {formData: JSON.stringify(formData), "@status": "submit"});
@@ -344,7 +345,7 @@ describe('submitCancellableForm with custom status map', () => {
         let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
 
-        expect(ref).toHaveBeenCalledWith(formRefMock, `forms/testUserId`);
+        expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
@@ -418,7 +419,7 @@ describe('submitCancellableForm with custom status map', () => {
 let finalFormData = {"@status": "finished", ...formData};
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient(app, uid,'https://testDatabaseName.testRegion.firebasedatabase.app');
+        initClient(app, uid, 'https://testDatabaseName.testRegion.firebasedatabase.app');
         jest.spyOn(index, 'submitCancellableForm').mockImplementation((formData, statusHandler) => {
             if (statusHandler) {
                 statusHandler('finished', finalFormData, true);
