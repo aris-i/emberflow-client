@@ -10,6 +10,7 @@ const formData: FormData = {
     "name": 'testName',
 };
 
+let uid = 'testUserId';
 let statusTransition = ['submitted'];
 let _callback: Function;
 let _formData: FormData;
@@ -71,7 +72,7 @@ const adminInstance = admin.initializeApp();
 const docPath = 'forms/testUserId/testDocId';
 describe('submitCancellableForm', () => {
     beforeAll(() => {
-        initClient(adminInstance);
+        initClient(adminInstance, uid);
     });
     it('should set form data and listen for status changes', async () => {
         // dbRefMock.mockReturnValue(formRefMock);
@@ -188,7 +189,7 @@ describe('submitCancellableForm', () => {
 
 describe('submitCancellableForm with timeout', () => {
     beforeAll(() => {
-        initClient(adminInstance);
+        initClient(adminInstance, uid);
     });
 
     it("should return an error status and a message when submitCancellableForm reaches the timeout, and the status is not in a terminal state", async () => {
@@ -295,6 +296,7 @@ describe('submitCancellableForm with custom status map', () => {
         jest.clearAllMocks();
         initClient(
             adminInstance,
+            uid,
             {
                 "submit": "Submit",
                 "delay": "Delay",
@@ -391,7 +393,7 @@ let finalFormData = {"@status": "finished", ...formData};
 
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient(adminInstance);
+        initClient(adminInstance, uid);
         jest.spyOn(index, 'submitCancellableForm').mockImplementation((formData, statusHandler) => {
             if (statusHandler) {
                 statusHandler('finished', finalFormData, true);
