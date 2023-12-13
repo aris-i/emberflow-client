@@ -3,23 +3,23 @@ import {Database, get, getDatabase, off, onChildChanged, push, ref, set, update}
 import {FirebaseApp} from "firebase/app";
 
 let db: Database;
-let statusMap: Record<FormStatus, string>;
+let _uid: string;
+let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
-let uid: string;
 
 export function initClient(
     app: FirebaseApp,
-    _uid: string,
+    uid: string,
     url?: string,
-    _statusMap?: Record<FormStatus, string>,
+    statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
     DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
     db = getDatabase(app, url);
-    uid = _uid;
+    _uid = uid;
 
-    if (_statusMap) {
-        statusMap = _statusMap;
+    if (statusMap) {
+        _statusMap = statusMap;
     }
 }
 
@@ -68,7 +68,7 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const formRef = push(ref(db, `forms/${uid}`));
+    const formRef = push(ref(db, `forms/${_uid}`));
     await set(formRef, {
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
@@ -157,5 +157,5 @@ export function submitForm(formData: FormData) {
 }
 
 export function getStatusValue(statusKey: FormStatus): string {
-    return statusMap ? (statusMap[statusKey] || statusKey) : statusKey;
+    return _statusMap ? (_statusMap[statusKey] || statusKey) : statusKey;
 }
