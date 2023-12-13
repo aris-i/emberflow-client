@@ -11,6 +11,7 @@ const formData: FormData = {
     "name": 'testName',
 };
 
+let uid = 'testUserId';
 let statusTransition = ['submitted'];
 let mockGetVal: any = {"@messages": {name: "Invalid"}};
 
@@ -77,6 +78,7 @@ describe('submitCancellableForm', () => {
     beforeAll(() => {
         initClient(
             app,
+            uid,
             'https://testDatabaseName.testRegion.firebasedatabase.app',
         );
     });
@@ -210,6 +212,7 @@ describe('submitCancellableForm with timeout', () => {
     beforeAll(() => {
         initClient(
             app,
+            uid,
             'https://testDatabaseName.testRegion.firebasedatabase.app',
         );
     });
@@ -318,6 +321,7 @@ describe('submitCancellableForm with custom status map', () => {
         jest.clearAllMocks();
         initClient(
             app,
+            uid,
             'https://testDatabaseName.testRegion.firebasedatabase.app',
             {
                 "submit": "Submit",
@@ -414,7 +418,7 @@ describe('submitCancellableForm with custom status map', () => {
 let finalFormData = {"@status": "finished", ...formData};
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient(app, 'https://testDatabaseName.testRegion.firebasedatabase.app');
+        initClient(app, uid,'https://testDatabaseName.testRegion.firebasedatabase.app');
         jest.spyOn(index, 'submitCancellableForm').mockImplementation((formData, statusHandler) => {
             if (statusHandler) {
                 statusHandler('finished', finalFormData, true);

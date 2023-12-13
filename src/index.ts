@@ -5,15 +5,19 @@ import {FirebaseApp} from "firebase/app";
 let db: Database;
 let statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
+let uid: string;
 
 export function initClient(
     app: FirebaseApp,
+    _uid: string,
     url?: string,
     _statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
     DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
     db = getDatabase(app, url);
+    uid = _uid;
+
     if (_statusMap) {
         statusMap = _statusMap;
     }
@@ -64,8 +68,7 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const userId = formData["@docPath"].split("/")[1];
-    const formRef = push(ref(db, `forms/${userId}`));
+    const formRef = push(ref(db, `forms/${uid}`));
     await set(formRef, {
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
