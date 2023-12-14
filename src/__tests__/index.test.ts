@@ -7,7 +7,7 @@ let uid = 'testUserId';
 // Mock the firebase database module
 const formData: FormData = {
     "@actionType": "create",
-    "@docPath": `forms/${uid}/testDocId`,
+    "@docPath": `topics/topicId`,
     "name": 'testName',
 };
 
