@@ -28,6 +28,8 @@ export const submitCancellableForm = async (
     statusHandler?: FormStatusHandler,
     timeout?: number
 ) => {
+    const submittedAt = new Date().getTime();
+
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
             || status === getStatusValue("cancelled")
@@ -54,12 +56,14 @@ export const submitCancellableForm = async (
                 if (isTerminalState(newStatus)) {
                     statusHandler(newStatus, {
                         ...formData,
+                        submittedAt,
                         "@status": newStatus,
                     }, isLastUpdate);
                 } else {
                     newStatus = getStatusValue("error");
                     statusHandler(newStatus, {
                         ...formData,
+                        submittedAt,
                         "@status": newStatus,
                         "@message": "timeout waiting for last status update"
                     }, isLastUpdate);
@@ -69,7 +73,6 @@ export const submitCancellableForm = async (
     }
 
     const formRef = push(ref(db, `forms/${_uid}`));
-    const submittedAt = new Date().getTime();
     await set(formRef, {
         "@status": getStatusValue("submit"),
         formData: JSON.stringify({...formData, submittedAt}),
