@@ -69,9 +69,10 @@ export const submitCancellableForm = async (
     }
 
     const formRef = push(ref(db, `forms/${_uid}`));
+    const submittedAt = new Date().getTime();
     await set(formRef, {
         "@status": getStatusValue("submit"),
-        formData: JSON.stringify(formData),
+        formData: JSON.stringify({...formData, submittedAt}),
     });
 
     let currentStatus = getStatusValue("submit");
@@ -111,7 +112,7 @@ export const submitCancellableForm = async (
         if (statusHandler) {
             statusHandler(
                 newStatus,
-                {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
+                {...formData, submittedAt, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
                 isLastUpdate
             );
         }
