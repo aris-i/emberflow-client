@@ -245,6 +245,7 @@ describe('submitCancellableForm with timeout', () => {
         expect(statusHandlerMock).toHaveBeenCalledTimes(4);
         expect(statusHandlerMock).toHaveBeenCalledWith('error', {
             ...formData,
+            submittedAt,
             "@status": 'error',
             "@message": "timeout waiting for last status update",
         }, true);
@@ -317,6 +318,7 @@ describe('submitCancellableForm with timeout', () => {
         expect(statusHandlerMock).toHaveBeenCalledTimes(3);
         expect(statusHandlerMock).toHaveBeenCalledWith('finished', {
             ...formData,
+            submittedAt,
             "@status": 'finished',
         }, true);
         expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
