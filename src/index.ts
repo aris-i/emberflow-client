@@ -47,22 +47,22 @@ export const submitCancellableForm = async (
             off(formRef, 'child_changed', onValueChange);
 
             const snapshot = await get(formRef);
-            const formData = snapshot.val();
+            const form = snapshot.val();
 
-            let newStatus = formData["@status"];
+            let newStatus = form["@status"];
             isLastUpdate = true;
 
             if (statusHandler) {
                 if (isTerminalState(newStatus)) {
                     statusHandler(newStatus, {
-                        ...formData,
+                        ...form,
                         submittedAt,
                         "@status": newStatus,
                     }, isLastUpdate);
                 } else {
                     newStatus = getStatusValue("error");
                     statusHandler(newStatus, {
-                        ...formData,
+                        ...form,
                         submittedAt,
                         "@status": newStatus,
                         "@message": "timeout waiting for last status update"
@@ -75,7 +75,8 @@ export const submitCancellableForm = async (
     const formRef = push(ref(db, `forms/${_uid}`));
     await set(formRef, {
         "@status": getStatusValue("submit"),
-        formData: JSON.stringify({...formData, submittedAt}),
+        formData: JSON.stringify(formData),
+        submittedAt,
     });
 
     let currentStatus = getStatusValue("submit");
