@@ -1,5 +1,8 @@
 import {FormData, FormStatus, FormStatusHandler} from "./types";
-import {Database, get, getDatabase, off, onChildChanged, push, ref, set, update} from "firebase/database";
+import {
+    Database, get, getDatabase, off, onChildChanged, push,
+    ref, serverTimestamp, set, update
+} from "firebase/database";
 import {FirebaseApp} from "firebase/app";
 
 let db: Database;
@@ -28,7 +31,7 @@ export const submitCancellableForm = async (
     statusHandler?: FormStatusHandler,
     timeout?: number
 ) => {
-    const submittedAt = new Date().getTime();
+    const submittedAt = serverTimestamp();
 
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")

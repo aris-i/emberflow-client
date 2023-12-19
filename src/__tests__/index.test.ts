@@ -1,7 +1,7 @@
 import * as index from '../index';
 import {initClient, submitCancellableForm, submitForm} from '../index';
 import {FormData} from '../types';
-import {get, off, onChildChanged, ref, set, update} from "firebase/database";
+import {get, off, onChildChanged, ref, serverTimestamp, set, update} from "firebase/database";
 import {initializeApp} from "firebase/app";
 
 let uid = 'testUserId';
@@ -34,6 +34,13 @@ const formRefMock = {
 };
 
 const dbRefMock = jest.fn();
+
+const currentTimestampInMilliseconds = Date.now();
+
+// Convert milliseconds to seconds and nanoseconds in UTC
+const seconds = Math.floor(currentTimestampInMilliseconds / 1000);
+const nanoseconds = (currentTimestampInMilliseconds % 1000) * 1e6;
+
 jest.mock('firebase/database', () => {
     return {
         __esModule: true,
@@ -63,6 +70,10 @@ jest.mock('firebase/database', () => {
                 }),
             }
         ),
+        serverTimestamp: jest.fn(() => ({
+            seconds: seconds, // Replace with your desired timestamp value
+            nanoseconds: nanoseconds,
+        })),
     }
 });
 
@@ -90,7 +101,7 @@ describe('submitCancellableForm', () => {
         statusTransition = ['submitted', 'finished'];
         let submittedForm = await submitCancellableForm(formData, statusHandlerMock, 200);
         await runCallback();
-        const submittedAt = new Date().getTime();
+        const submittedAt = serverTimestamp();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
@@ -168,7 +179,7 @@ describe('submitCancellableForm', () => {
         statusTransition = ['submit', 'validation-error'];
         let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
-        const submittedAt = new Date().getTime();
+        const submittedAt = serverTimestamp();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
@@ -193,7 +204,7 @@ describe('submitCancellableForm', () => {
         statusTransition = ['submit', 'security-error'];
         await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
-        const submittedAt = new Date().getTime();
+        const submittedAt = serverTimestamp();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
@@ -223,7 +234,7 @@ describe('submitCancellableForm with timeout', () => {
 
         const timeout = 5000;
         statusTransition = ['submit', 'submitted', 'delay'];
-        const submittedAt = new Date().getTime();
+        const submittedAt = serverTimestamp()
         mockGetVal = {...formData, submittedAt, "@status": statusTransition[statusTransition.length - 1]};
 
         dbRefMock.mockReturnValue(formRefMock);
@@ -270,7 +281,7 @@ describe('submitCancellableForm with timeout', () => {
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
         await runCallback();
-        const submittedAt = new Date().getTime();
+        const submittedAt = serverTimestamp()
 
         expect(submittedForm).toBeDefined();
         expect(statusHandlerMock).toHaveBeenCalledWith('submit', {
@@ -304,7 +315,7 @@ describe('submitCancellableForm with timeout', () => {
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
         await runCallback();
-        const submittedAt = new Date().getTime();
+        const submittedAt = serverTimestamp()
 
         expect(submittedForm).toBeDefined();
         expect(statusHandlerMock).toHaveBeenCalledWith('submit', {
@@ -357,7 +368,7 @@ describe('submitCancellableForm with custom status map', () => {
         statusTransition = ['Submitted', 'Finished'];
         let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
-        const submittedAt = new Date().getTime();
+        const submittedAt = serverTimestamp()
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
