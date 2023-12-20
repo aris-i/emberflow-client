@@ -78,7 +78,7 @@ export const submitCancellableForm = async (
     await formRef.set({
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
-        submittedAt: submittedAt
+        submittedAt: firebase.database.ServerValue.TIMESTAMP
     });
 
     let currentStatus = getStatusValue("submit");
