@@ -27,7 +27,7 @@ export const submitCancellableForm = async (
     statusHandler?: FormStatusHandler,
     timeout?: number
 ) => {
-    const submittedAt = new Date().getTime();
+    const submittedAt = new Date();
 
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
@@ -76,7 +76,8 @@ export const submitCancellableForm = async (
     const formRef = db.ref(`forms/${_uid}`).push();
     await formRef.set({
         "@status": getStatusValue("submit"),
-        formData: JSON.stringify({...formData, submittedAt}),
+        formData: JSON.stringify(formData),
+        submittedAt
     });
 
     let currentStatus = getStatusValue("submit");
