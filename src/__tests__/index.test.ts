@@ -53,16 +53,25 @@ const formRefMock = {
 };
 
 const dbRefMock = jest.fn();
-jest.mock('@react-native-firebase/database', () => ({
-    __esModule: true,
-    firebase: {
-        app: jest.fn(() => ({
-            database: jest.fn(() => ({
-                ref: dbRefMock,
+jest.mock('@react-native-firebase/database', () => {
+    return {
+        __esModule: true,
+        firebase: {
+            app: jest.fn(() => ({
+                database: jest.fn(() => ({
+                    ref: dbRefMock,
+                })),
             })),
-        })),
-    },
-}));
+            database: {
+                ServerValue: {
+                    TIMESTAMP: {
+                        ".sv": "timestamp"
+                    }
+                }
+            }
+        },
+    }
+});
 
 
 describe('submitCancellableForm', () => {
@@ -82,7 +91,7 @@ describe('submitCancellableForm', () => {
         expect(typeof submittedForm.cancel).toBe('function');
         expect(typeof submittedForm.unsubscribe).toBe('function');
         expect(formRefMock.set).toHaveBeenCalledWith(
-            {formData: JSON.stringify(formData), submittedAt, "@status": "submit"});
+            {formData: JSON.stringify(formData), submittedAt: {".sv": "timestamp"}, "@status": "submit"});
         expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submitted',
@@ -156,7 +165,7 @@ describe('submitCancellableForm', () => {
 
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith(
-            {formData: JSON.stringify(formData), submittedAt, "@status": "submit"});
+            {formData: JSON.stringify(formData), submittedAt: {".sv": "timestamp"}, "@status": "submit"});
         expect(formRefMock.once).toHaveBeenCalledWith('value', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submit',
@@ -176,7 +185,7 @@ describe('submitCancellableForm', () => {
 
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith({
-            formData: JSON.stringify(formData), submittedAt, "@status": "submit"
+            formData: JSON.stringify(formData), submittedAt: {".sv": "timestamp"}, "@status": "submit"
         });
         expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
@@ -357,7 +366,7 @@ describe('submitCancellableForm with custom status map', () => {
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
         expect(formRefMock.set).toHaveBeenCalledWith(
-            {formData: JSON.stringify(formData), submittedAt, "@status": "Submit"});
+            {formData: JSON.stringify(formData), submittedAt: {".sv": "timestamp"}, "@status": "Submit"});
         expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('Submitted',
