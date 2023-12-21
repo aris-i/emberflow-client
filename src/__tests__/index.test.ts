@@ -59,14 +59,24 @@ const formRefMock = {
 };
 
 const dbRefMock = jest.fn();
-jest.mock('firebase-admin', () => ({
-    __esModule: true,
-    initializeApp: jest.fn(() => ({
-        database: jest.fn(() => {
-            return formRefMock;
-        }),
-    })),
-}));
+jest.mock('firebase-admin', () => {
+    const originalModule = jest.requireActual('firebase-admin');
+
+    return {
+        ...originalModule,
+        __esModule: true,
+        initializeApp: jest.fn(() => ({
+            database: jest.fn(() => {
+                return formRefMock;
+            }),
+        })),
+        firestore: {...originalModule.firestore}
+    }
+});
+
+let currentTimestampInMilliseconds = Date.now();
+const _seconds = Math.floor(currentTimestampInMilliseconds / 1000);
+const _nanoseconds = (currentTimestampInMilliseconds % 1000) * 1e6;
 
 const adminInstance = admin.initializeApp();
 
@@ -87,7 +97,7 @@ describe('submitCancellableForm', () => {
         expect(submittedForm).toBeDefined();
         expect(typeof submittedForm.cancel).toBe('function');
         expect(formRefMock.set).toHaveBeenCalledWith(
-            {formData: JSON.stringify(formData), submittedAt, "@status": "submit"});
+            {formData: JSON.stringify(formData), submittedAt: {_nanoseconds, _seconds}, "@status": "submit"});
         expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submitted',
@@ -161,7 +171,7 @@ describe('submitCancellableForm', () => {
 
         expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith(
-            {formData: JSON.stringify(formData), submittedAt, "@status": "submit"});
+            {formData: JSON.stringify(formData), submittedAt: {_nanoseconds, _seconds}, "@status": "submit"});
         expect(formRefMock.once).toHaveBeenCalledWith('value', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submit',
@@ -181,7 +191,7 @@ describe('submitCancellableForm', () => {
 
         expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith(
-            {formData: JSON.stringify(formData), submittedAt, "@status": "submit"});
+            {formData: JSON.stringify(formData), submittedAt: {_nanoseconds, _seconds}, "@status": "submit"});
         expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submit',
@@ -330,6 +340,10 @@ describe('submitCancellableForm with custom status map', () => {
     });
 
     it('should set form data and listen for status changes', async () => {
+        const currentTimestampInMilliseconds = Date.now();
+        const _seconds = Math.floor(currentTimestampInMilliseconds / 1000);
+        const _nanoseconds = (currentTimestampInMilliseconds % 1000) * 1e6;
+
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         statusTransition = ['Submitted', 'Finished'];
@@ -342,7 +356,7 @@ describe('submitCancellableForm with custom status map', () => {
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
         expect(formRefMock.set).toHaveBeenCalledWith(
-            {formData: JSON.stringify(formData), submittedAt, "@status": "Submit"}
+            {formData: JSON.stringify(formData), submittedAt: {_nanoseconds, _seconds}, "@status": "Submit"}
         );
         expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
