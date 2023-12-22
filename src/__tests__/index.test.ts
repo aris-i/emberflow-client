@@ -88,7 +88,7 @@ describe('submitCancellableForm', () => {
         // dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         statusTransition = ['submitted', 'finished'];
-        let submittedForm = await submitCancellableForm(formData, statusHandlerMock, 200);
+        let submittedForm = await submitCancellableForm(formData, statusHandlerMock, undefined, 200);
         runCallback();
         const submittedAt = new Date();
 
@@ -215,7 +215,7 @@ describe('submitCancellableForm with timeout', () => {
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
-        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
+        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, undefined, timeout);
         runCallback();
         const submittedAt = new Date();
 
@@ -256,7 +256,7 @@ describe('submitCancellableForm with timeout', () => {
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
-        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
+        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, undefined, timeout);
         runCallback();
         const submittedAt = new Date();
 
@@ -291,7 +291,7 @@ describe('submitCancellableForm with timeout', () => {
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
-        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
+        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, undefined, timeout);
         runCallback();
         const submittedAt = new Date();
 
@@ -419,6 +419,50 @@ describe('submitCancellableForm with custom status map', () => {
         await form.unsubscribe();
         expect(formRefMock.off).toHaveBeenCalled();
         expect(formRefMock.off).toHaveBeenCalledWith("child_changed", onReturnMock);
+    });
+});
+
+describe('submitCancellableForm with custom uid', () => {
+    const serviceUid = "service"
+    beforeAll(() => {
+        jest.clearAllMocks();
+        initClient(
+            adminInstance,
+            serviceUid,
+            {
+                "submit": "Submit",
+                "delay": "Delay",
+                "cancel": "Cancel",
+                "submitted": "Submitted",
+                "finished": "Finished",
+                "cancelled": "Canceled",
+                "error": "Error",
+                "security-error": "SecurityError",
+                "validation-error": "ValidationError",
+            }
+        );
+    });
+
+    it('should should use service uid', async () => {
+        dbRefMock.mockReturnValue(formRefMock);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ['Submitted', 'Finished'];
+        let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
+        runCallback();
+
+        expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${serviceUid}`);
+    });
+
+    it('should use custom uid passed in formData', async () => {
+        let customUid = "12345678";
+        dbRefMock.mockReturnValue(formRefMock);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ['Submitted', 'Finished'];
+        let cancelForm = await submitCancellableForm(
+            formData, statusHandlerMock, customUid);
+        runCallback();
+
+        expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${customUid}`);
     });
 });
 

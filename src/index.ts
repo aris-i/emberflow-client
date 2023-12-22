@@ -25,7 +25,8 @@ export function initClient(
 export const submitCancellableForm = async (
     formData: FormData,
     statusHandler?: FormStatusHandler,
-    timeout?: number
+    uid?: string,
+    timeout?: number,
 ) => {
     const submittedAt = new Date();
 
@@ -73,7 +74,7 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const formRef = db.ref(`forms/${_uid}`).push();
+    const formRef = db.ref(`forms/${uid || _uid}`).push();
     await formRef.set({
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
@@ -147,7 +148,7 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData) {
+export function submitForm(formData: FormData, uid?: string) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
@@ -155,7 +156,9 @@ export function submitForm(formData: FormData) {
                 if (isLastUpdate) {
                     resolve(data);
                 }
-            }
+            },
+            uid,
+            undefined,
         );
     });
 }
