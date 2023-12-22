@@ -70,7 +70,7 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const formRef = db.ref(`forms/${uid ?? _uid}`).push();
+    const formRef = db.ref(`forms/${uid || _uid}`).push();
 
     await formRef.set({
         "@status": getStatusValue("submit"),
