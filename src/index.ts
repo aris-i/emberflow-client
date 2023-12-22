@@ -1,6 +1,7 @@
 import {FormData, FormStatus, FormStatusHandler} from "./types";
 import * as admin from "firebase-admin";
 import {database} from "firebase-admin";
+import {Timestamp} from "firebase-admin/firestore";
 
 let db: database.Database;
 let _uid: string;
@@ -78,7 +79,7 @@ export const submitCancellableForm = async (
     await formRef.set({
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
-        submittedAt: admin.firestore.Timestamp.now(),
+        submittedAt: Timestamp.now(),
     });
 
     let currentStatus = getStatusValue("submit");
