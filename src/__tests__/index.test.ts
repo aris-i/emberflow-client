@@ -2,12 +2,15 @@ import * as index from '../index';
 import {initClient, submitCancellableForm, submitForm} from '../index';
 import {FormData} from '../types';
 
+let uid = 'testUserId';
+
 // Mock the firebase database module
 const formData: FormData = {
     "@actionType": "create",
-    "@docPath": "forms/testUserId/testDocId",
+    "@docPath": `topics/topicId`,
     "name": 'testName',
 };
+
 let statusTransition = ['submitted'];
 let statusAtTimeout = {'@status': 'submitted'};
 
@@ -64,7 +67,7 @@ jest.mock('@react-native-firebase/database', () => ({
 
 describe('submitCancellableForm', () => {
     beforeAll(() => {
-        initClient('testRtdbUrl');
+        initClient('testRtdbUrl', uid);
     });
     it('should set form data and listen for status changes', async () => {
         dbRefMock.mockReturnValue(formRefMock);
@@ -73,7 +76,7 @@ describe('submitCancellableForm', () => {
         let submittedForm = await submitCancellableForm(formData, statusHandlerMock, 200);
         runCallback();
 
-        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
+        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
         expect(submittedForm).toBeDefined();
         expect(typeof submittedForm.cancel).toBe('function');
         expect(typeof submittedForm.unsubscribe).toBe('function');
@@ -148,7 +151,7 @@ describe('submitCancellableForm', () => {
         statusTransition = ['submit', 'validation-error'];
         await submitCancellableForm(formData, statusHandlerMock);
         runCallback();
-        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
+        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
         expect(formRefMock.set)
             .toHaveBeenCalledWith({formData: JSON.stringify(formData), "@status": "submit"});
         expect(formRefMock.once).toHaveBeenCalledWith('value', expect.any(Function));
@@ -166,7 +169,7 @@ describe('submitCancellableForm', () => {
         statusTransition = ['submit', 'security-error'];
         await submitCancellableForm(formData, statusHandlerMock);
         runCallback();
-        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
+        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
         expect(formRefMock.set)
             .toHaveBeenCalledWith({formData: JSON.stringify(formData), "@status": "submit"});
         expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
@@ -181,7 +184,7 @@ describe('submitCancellableForm', () => {
 
 describe('submitCancellableForm with timeout', () => {
     beforeAll(() => {
-        initClient('testRtdbUrl');
+        initClient('testRtdbUrl', uid);
     });
 
     const valMock = jest.fn();
@@ -308,6 +311,7 @@ describe('submitCancellableForm with custom status map', () => {
         jest.clearAllMocks();
         initClient(
             'testRtdbUrl',
+            uid,
             {
                 "submit": "Submit",
                 "delay": "Delay",
@@ -329,7 +333,7 @@ describe('submitCancellableForm with custom status map', () => {
         let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
         runCallback();
 
-        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/testUserId`);
+        expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
         expect(formRefMock.set).toHaveBeenCalledWith(
@@ -402,7 +406,7 @@ describe('submitCancellableForm with custom status map', () => {
 let finalFormData = {"@status": "finished", ...formData};
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient('testRtdbUrl');
+        initClient('testRtdbUrl', uid);
         jest.spyOn(index, 'submitCancellableForm').mockImplementation((formData, statusHandler) => {
             if (statusHandler) {
                 statusHandler('finished', finalFormData, true);

@@ -2,20 +2,24 @@ import {firebase, FirebaseDatabaseTypes} from "@react-native-firebase/database";
 import {FormData, FormStatus, FormStatusHandler} from "./types";
 
 let db: FirebaseDatabaseTypes.Module;
-let statusMap: Record<FormStatus, string>;
+let _uid: string;
+let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
 export function initClient(
     rtdbUrl: string,
-    _statusMap?: Record<FormStatus, string>,
+    uid: string,
+    statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
     DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
     db = firebase
         .app()
         .database(rtdbUrl);
-    if (_statusMap) {
-        statusMap = _statusMap;
+    _uid = uid;
+
+    if (statusMap) {
+        _statusMap = statusMap;
     }
 }
 
@@ -66,9 +70,7 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const userId = formData["@docPath"].split("/")[1];
-
-    const formRef = db.ref(`forms/${userId}`).push();
+    const formRef = db.ref(`forms/${_uid}`).push();
 
     await formRef.set({
         "@status": getStatusValue("submit"),
@@ -157,5 +159,5 @@ export function submitForm(formData: FormData) {
 }
 
 export function getStatusValue(statusKey: FormStatus): string {
-    return statusMap ? (statusMap[statusKey] || statusKey) : statusKey;
+    return _statusMap ? (_statusMap[statusKey] || statusKey) : statusKey;
 }
