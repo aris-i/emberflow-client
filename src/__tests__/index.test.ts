@@ -78,7 +78,7 @@ describe('submitCancellableForm', () => {
         // dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         statusTransition = ['submitted', 'finished'];
-        let submittedForm = await submitCancellableForm(formData, statusHandlerMock, 200);
+        let submittedForm = await submitCancellableForm(formData, statusHandlerMock, undefined, 200);
         runCallback();
 
         expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${uid}`);
@@ -200,7 +200,7 @@ describe('submitCancellableForm with timeout', () => {
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
-        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
+        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, undefined, timeout);
         runCallback();
 
         expect(submittedForm).toBeDefined();
@@ -236,7 +236,7 @@ describe('submitCancellableForm with timeout', () => {
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
-        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
+        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, undefined, timeout);
         runCallback();
 
         expect(submittedForm).toBeDefined();
@@ -267,7 +267,7 @@ describe('submitCancellableForm with timeout', () => {
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
-        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
+        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, undefined, timeout);
         runCallback();
 
         expect(submittedForm).toBeDefined();
@@ -438,8 +438,8 @@ describe('submitCancellableForm with custom uid', () => {
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         statusTransition = ['Submitted', 'Finished'];
-        formData.uid = customUid;
-        let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
+        let cancelForm = await submitCancellableForm(
+            formData, statusHandlerMock, customUid);
         runCallback();
 
         expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${customUid}`);

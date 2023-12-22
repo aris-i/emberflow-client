@@ -25,10 +25,11 @@ export function initClient(
 export const submitCancellableForm = async (
     formData: FormData,
     statusHandler?: FormStatusHandler,
-    timeout?: number
+    uid?: string,
+    timeout?: number,
 ) => {
-    if (formData.uid) {
-        _uid = formData.uid;
+    if (uid) {
+        _uid = uid;
     }
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
@@ -146,7 +147,7 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData) {
+export function submitForm(formData: FormData, uid?: string) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
@@ -154,7 +155,9 @@ export function submitForm(formData: FormData) {
                 if (isLastUpdate) {
                     resolve(data);
                 }
-            }
+            },
+            uid,
+            undefined,
         );
     });
 }
