@@ -28,11 +28,6 @@ export const submitCancellableForm = async (
     uid?: string,
     timeout?: number,
 ) => {
-    let userId = _uid;
-
-    if(uid) {
-        userId = uid;
-    }
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
             || status === getStatusValue("cancelled")
@@ -75,7 +70,7 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const formRef = db.ref(`forms/${userId}`).push();
+    const formRef = db.ref(`forms/${uid ?? _uid}`).push();
 
     await formRef.set({
         "@status": getStatusValue("submit"),
