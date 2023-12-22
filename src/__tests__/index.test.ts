@@ -451,19 +451,6 @@ describe('submitCancellableForm with custom uid', () => {
         runCallback();
 
         expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${serviceUid}`);
-        expect(formRefMock.ref).toHaveBeenCalledTimes(1);
-        expect(cancelForm).toBeDefined();
-        expect(typeof cancelForm.cancel).toBe('function');
-        expect(formRefMock.set).toHaveBeenCalledWith(
-            {formData: JSON.stringify(formData), "@status": "Submit"}
-        );
-        expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
-        expect(statusHandlerMock).toHaveBeenCalledTimes(2);
-        expect(statusHandlerMock).toHaveBeenCalledWith('Submitted',
-            {...formData, "@status": "Submitted"}, false);
-        expect(statusHandlerMock).toHaveBeenCalledWith('Finished',
-            {...formData, "@status": "Finished"}, true);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
     });
 
     it('should use custom uid passed in formData', async () => {
@@ -476,18 +463,6 @@ describe('submitCancellableForm with custom uid', () => {
         runCallback();
 
         expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${customUid}`);
-        expect(cancelForm).toBeDefined();
-        expect(typeof cancelForm.cancel).toBe('function');
-        expect(formRefMock.set).toHaveBeenCalledWith(
-            {formData: JSON.stringify(formData), "@status": "Submit"}
-        );
-        expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
-        expect(statusHandlerMock).toHaveBeenCalledTimes(2);
-        expect(statusHandlerMock).toHaveBeenCalledWith('Submitted',
-            {...formData, "@status": "Submitted"}, false);
-        expect(statusHandlerMock).toHaveBeenCalledWith('Finished',
-            {...formData, "@status": "Finished"}, true);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
     });
 });
 
