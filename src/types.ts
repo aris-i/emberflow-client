@@ -5,5 +5,6 @@ export interface FormData {
     "@docPath": string;
     "@actionType": FormActionType;
     [key: string]: any;
+    "uid"?: string;
 }
 export type FormStatusHandler = (status: FormStatus, data: FormData, isLastUpdate: boolean) => void;

@@ -27,6 +27,9 @@ export const submitCancellableForm = async (
     statusHandler?: FormStatusHandler,
     timeout?: number
 ) => {
+    if (formData.uid) {
+        _uid = formData.uid;
+    }
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
             || status === getStatusValue("cancelled")

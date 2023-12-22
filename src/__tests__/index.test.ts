@@ -389,6 +389,75 @@ describe('submitCancellableForm with custom status map', () => {
     });
 });
 
+describe('submitCancellableForm with custom uid', () => {
+    const serviceUid = "service"
+    beforeAll(() => {
+        jest.clearAllMocks();
+        initClient(
+            adminInstance,
+            serviceUid,
+            {
+                "submit": "Submit",
+                "delay": "Delay",
+                "cancel": "Cancel",
+                "submitted": "Submitted",
+                "finished": "Finished",
+                "cancelled": "Canceled",
+                "error": "Error",
+                "security-error": "SecurityError",
+                "validation-error": "ValidationError",
+            }
+        );
+    });
+
+    it('should should use service uid', async () => {
+        dbRefMock.mockReturnValue(formRefMock);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ['Submitted', 'Finished'];
+        let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
+        runCallback();
+
+        expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${serviceUid}`);
+        expect(formRefMock.ref).toHaveBeenCalledTimes(1);
+        expect(cancelForm).toBeDefined();
+        expect(typeof cancelForm.cancel).toBe('function');
+        expect(formRefMock.set).toHaveBeenCalledWith(
+            {formData: JSON.stringify(formData), "@status": "Submit"}
+        );
+        expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(statusHandlerMock).toHaveBeenCalledTimes(2);
+        expect(statusHandlerMock).toHaveBeenCalledWith('Submitted',
+            {...formData, "@status": "Submitted"}, false);
+        expect(statusHandlerMock).toHaveBeenCalledWith('Finished',
+            {...formData, "@status": "Finished"}, true);
+        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+    });
+
+    it('should use custom uid passed in formData', async () => {
+        let customUid = "12345678";
+        dbRefMock.mockReturnValue(formRefMock);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ['Submitted', 'Finished'];
+        formData.uid = customUid;
+        let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
+        runCallback();
+
+        expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${customUid}`);
+        expect(cancelForm).toBeDefined();
+        expect(typeof cancelForm.cancel).toBe('function');
+        expect(formRefMock.set).toHaveBeenCalledWith(
+            {formData: JSON.stringify(formData), "@status": "Submit"}
+        );
+        expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(statusHandlerMock).toHaveBeenCalledTimes(2);
+        expect(statusHandlerMock).toHaveBeenCalledWith('Submitted',
+            {...formData, "@status": "Submitted"}, false);
+        expect(statusHandlerMock).toHaveBeenCalledWith('Finished',
+            {...formData, "@status": "Finished"}, true);
+        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+    });
+});
+
 let finalFormData = {"@status": "finished", ...formData};
 
 describe('submitForm', () => {
