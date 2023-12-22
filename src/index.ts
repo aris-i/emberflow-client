@@ -28,6 +28,8 @@ export const submitCancellableForm = async (
     uid?: string,
     timeout?: number,
 ) => {
+    const submittedAt = new Date();
+
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
             || status === getStatusValue("cancelled")
@@ -56,12 +58,14 @@ export const submitCancellableForm = async (
                 if (isTerminalState(newStatus)) {
                     statusHandler(newStatus, {
                         ...formData,
+                        submittedAt,
                         "@status": newStatus,
                     }, isLastUpdate);
                 } else {
                     newStatus = getStatusValue("error");
                     statusHandler(newStatus, {
                         ...formData,
+                        submittedAt,
                         "@status": newStatus,
                         "@message": "timeout waiting for last status update"
                     }, isLastUpdate);
@@ -70,11 +74,11 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const formRef = db.ref(`forms/${uid || _uid}`).push();
-
+    const formRef = db.ref(`forms/${_uid}`).push();
     await formRef.set({
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
+        submittedAt: admin.firestore.Timestamp.now(),
     });
 
     let currentStatus = getStatusValue("submit");
@@ -112,7 +116,7 @@ export const submitCancellableForm = async (
         if (statusHandler) {
             statusHandler(
                 newStatus,
-                {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
+                {...formData, submittedAt, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
                 isLastUpdate
             );
         }
