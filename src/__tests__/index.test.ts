@@ -1,7 +1,7 @@
 import * as index from '../index';
 import {initClient, submitCancellableForm, submitForm} from '../index';
 import {FormData} from '../types';
-import {get, off, onChildChanged, ref, set, update} from "firebase/database";
+import {get, off, onChildChanged, ref, serverTimestamp, set, update} from "firebase/database";
 import {initializeApp} from "firebase/app";
 
 let uid = 'testUserId';
@@ -34,6 +34,11 @@ const formRefMock = {
 };
 
 const dbRefMock = jest.fn();
+
+const currentTimestampInMilliseconds = Date.now();
+const seconds = Math.floor(currentTimestampInMilliseconds / 1000);
+const nanoseconds = (currentTimestampInMilliseconds % 1000) * 1e6;
+
 jest.mock('firebase/database', () => {
     return {
         __esModule: true,
@@ -63,6 +68,10 @@ jest.mock('firebase/database', () => {
                 }),
             }
         ),
+        serverTimestamp: jest.fn(() => ({
+            seconds: seconds, // Replace with your desired timestamp value
+            nanoseconds: nanoseconds,
+        })),
     }
 });
 
@@ -90,21 +99,21 @@ describe('submitCancellableForm', () => {
         statusTransition = ['submitted', 'finished'];
         let submittedForm = await submitCancellableForm(formData, statusHandlerMock, 200);
         await runCallback();
+        const formSubmittedAt = serverTimestamp();
+        const submittedAt = new Date();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
         expect(submittedForm).toBeDefined();
         expect(typeof submittedForm.cancel).toBe('function');
-        expect(set).toHaveBeenCalledWith(
-            onReturnMock,
-            {formData: JSON.stringify(formData), "@status": "submit"}
-        );
+        expect(set).toHaveBeenCalledWith(onReturnMock,
+            {formData: JSON.stringify(formData), submittedAt: formSubmittedAt, "@status": "submit"});
         expect(onChildChanged).toHaveBeenCalledWith(onReturnMock, expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submitted',
-            {...formData, "@status": "submitted"}, false);
+            {...formData, submittedAt, "@status": "submitted"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('finished',
-            {...formData, "@status": "finished"}, true);
+            {...formData, submittedAt, "@status": "finished"}, true);
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", expect.any(Function));
     });
 
@@ -169,22 +178,22 @@ describe('submitCancellableForm', () => {
         statusTransition = ['submit', 'validation-error'];
         let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
+        const formSubmittedAt = serverTimestamp();
+        const submittedAt = new Date();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
-        expect(set).toHaveBeenCalledWith(
-            onReturnMock,
-            {formData: JSON.stringify(formData), "@status": "submit"}
-        );
+        expect(set).toHaveBeenCalledWith(onReturnMock,
+            {formData: JSON.stringify(formData), submittedAt: formSubmittedAt, "@status": "submit"});
         expect(onChildChanged).toHaveBeenCalledWith(onReturnMock, expect.any(Function));
         expect(get).toHaveBeenCalledTimes(1);
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submit',
-            {...formData, "@status": "submit"}, false);
+            {...formData, submittedAt, "@status": "submit"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('validation-error',
-            {...formData, "@status": "validation-error", "@messages": {name: "Invalid"}}, true);
+            {...formData, submittedAt, "@status": "validation-error", "@messages": {name: "Invalid"}}, true);
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", expect.any(Function));
     });
 
@@ -195,16 +204,19 @@ describe('submitCancellableForm', () => {
         statusTransition = ['submit', 'security-error'];
         await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
+        const formSubmittedAt = serverTimestamp();
+        const submittedAt = new Date();
+
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
-        expect(set)
-            .toHaveBeenCalledWith(onReturnMock, {formData: JSON.stringify(formData), "@status": "submit"});
+        expect(set).toHaveBeenCalledWith(onReturnMock,
+            {formData: JSON.stringify(formData), submittedAt: formSubmittedAt, "@status": "submit"});
         expect(get).toHaveBeenCalledTimes(1);
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submit',
-            {...formData, "@status": "submit"}, false);
+            {...formData, submittedAt, "@status": "submit"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('security-error',
-            {...formData, "@status": "security-error", "@messages": {"name": "Invalid"}}, true);
+            {...formData, submittedAt, "@status": "security-error", "@messages": {"name": "Invalid"}}, true);
         expect(off).toHaveBeenCalledWith(onReturnMock, 'child_changed', expect.any(Function));
     });
 });
@@ -223,6 +235,7 @@ describe('submitCancellableForm with timeout', () => {
 
         const timeout = 5000;
         statusTransition = ['submit', 'submitted', 'delay'];
+        const submittedAt = new Date();
         mockGetVal = {...formData, "@status": statusTransition[statusTransition.length - 1]};
 
         dbRefMock.mockReturnValue(formRefMock);
@@ -233,14 +246,17 @@ describe('submitCancellableForm with timeout', () => {
         expect(submittedForm).toBeDefined();
         expect(statusHandlerMock).toHaveBeenCalledWith('submit', {
             ...formData,
+            submittedAt,
             "@status": 'submit',
         }, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('submitted', {
             ...formData,
+            submittedAt,
             "@status": 'submitted',
         }, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('delay', {
             ...formData,
+            submittedAt,
             "@status": 'delay',
         }, false);
 
@@ -249,6 +265,7 @@ describe('submitCancellableForm with timeout', () => {
         expect(statusHandlerMock).toHaveBeenCalledTimes(4);
         expect(statusHandlerMock).toHaveBeenCalledWith('error', {
             ...formData,
+            submittedAt,
             "@status": 'error',
             "@message": "timeout waiting for last status update",
         }, true);
@@ -258,26 +275,34 @@ describe('submitCancellableForm with timeout', () => {
     it("should not return an error status and a message when submitCancellableForm reaches the timeout, and the status is in a terminal state", async () => {
         jest.useFakeTimers();
         statusTransition = ['submit', 'submitted', 'finished'];
-        mockGetVal = {...formData, "@status": statusTransition[statusTransition.length - 1]};
+        mockGetVal = {
+            ...formData,
+            "@status": statusTransition[statusTransition.length - 1],
+            submittedAt: {nanoseconds, seconds}
+        };
         const timeout = 1000;
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
         await runCallback();
+        const submittedAt = new Date();
 
         expect(submittedForm).toBeDefined();
         expect(statusHandlerMock).toHaveBeenCalledWith('submit', {
             ...formData,
+            submittedAt,
             "@status": 'submit',
         }, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('submitted', {
             ...formData,
             "@status": 'submitted',
+            submittedAt,
         }, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('finished', {
             ...formData,
             "@status": 'finished',
+            submittedAt,
         }, true);
 
         await jest.advanceTimersByTime(timeout);
@@ -288,21 +313,24 @@ describe('submitCancellableForm with timeout', () => {
     it("should return a final update when submitCancellableForm reaches the timeout, and the status is in a terminal state", async () => {
         jest.useFakeTimers();
         statusTransition = ['submit', 'submitted'];
-        mockGetVal = {...formData, "@status": 'finished'};
+        mockGetVal = {...formData, "@status": 'finished', submittedAt: {nanoseconds, seconds}};
         const timeout = 1000;
 
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
         await runCallback();
+        const submittedAt = new Date();
 
         expect(submittedForm).toBeDefined();
         expect(statusHandlerMock).toHaveBeenCalledWith('submit', {
             ...formData,
+            submittedAt,
             "@status": 'submit',
         }, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('submitted', {
             ...formData,
+            submittedAt,
             "@status": 'submitted',
         }, false);
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
@@ -311,6 +339,7 @@ describe('submitCancellableForm with timeout', () => {
         expect(statusHandlerMock).toHaveBeenCalledTimes(3);
         expect(statusHandlerMock).toHaveBeenCalledWith('finished', {
             ...formData,
+            submittedAt,
             "@status": 'finished',
         }, true);
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", onReturnMock);
@@ -344,21 +373,22 @@ describe('submitCancellableForm with custom status map', () => {
         statusTransition = ['Submitted', 'Finished'];
         let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
+        const formSubmittedAt = serverTimestamp();
+        const submittedAt = new Date();
 
         expect(ref).toHaveBeenCalledWith(formRefMock, `forms/${uid}`);
         expect(ref).toHaveBeenCalledTimes(1);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
-        expect(set).toHaveBeenCalledWith(
-            onReturnMock,
-            {formData: JSON.stringify(formData), "@status": "Submit"}
+        expect(set).toHaveBeenCalledWith(onReturnMock,
+            {formData: JSON.stringify(formData), submittedAt: formSubmittedAt, "@status": "Submit"}
         );
         expect(onChildChanged).toHaveBeenCalledWith(onReturnMock, expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('Submitted',
-            {...formData, "@status": "Submitted"}, false);
+            {...formData, submittedAt, "@status": "Submitted"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('Finished',
-            {...formData, "@status": "Finished"}, true);
+            {...formData, submittedAt, "@status": "Finished"}, true);
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", expect.any(Function));
     });
 

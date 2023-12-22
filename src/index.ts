@@ -1,5 +1,8 @@
 import {FormData, FormStatus, FormStatusHandler} from "./types";
-import {Database, get, getDatabase, off, onChildChanged, push, ref, set, update} from "firebase/database";
+import {
+    Database, get, getDatabase, off, onChildChanged, push,
+    ref, serverTimestamp, set, update
+} from "firebase/database";
 import {FirebaseApp} from "firebase/app";
 
 let db: Database;
@@ -28,6 +31,8 @@ export const submitCancellableForm = async (
     statusHandler?: FormStatusHandler,
     timeout?: number
 ) => {
+    const submittedAt = new Date();
+
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
             || status === getStatusValue("cancelled")
@@ -45,21 +50,23 @@ export const submitCancellableForm = async (
             off(formRef, 'child_changed', onValueChange);
 
             const snapshot = await get(formRef);
-            const formData = snapshot.val();
+            const form = snapshot.val();
 
-            let newStatus = formData["@status"];
+            let newStatus = form["@status"];
             isLastUpdate = true;
 
             if (statusHandler) {
                 if (isTerminalState(newStatus)) {
                     statusHandler(newStatus, {
-                        ...formData,
+                        ...form,
+                        submittedAt,
                         "@status": newStatus,
                     }, isLastUpdate);
                 } else {
                     newStatus = getStatusValue("error");
                     statusHandler(newStatus, {
-                        ...formData,
+                        ...form,
+                        submittedAt,
                         "@status": newStatus,
                         "@message": "timeout waiting for last status update"
                     }, isLastUpdate);
@@ -72,6 +79,7 @@ export const submitCancellableForm = async (
     await set(formRef, {
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
+        submittedAt: serverTimestamp(),
     });
 
     let currentStatus = getStatusValue("submit");
@@ -111,7 +119,7 @@ export const submitCancellableForm = async (
         if (statusHandler) {
             statusHandler(
                 newStatus,
-                {...formData, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
+                {...formData, submittedAt, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
                 isLastUpdate
             );
         }
