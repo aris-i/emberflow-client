@@ -1,21 +1,21 @@
-import {firebase, FirebaseDatabaseTypes} from "@react-native-firebase/database";
 import {FormData, FormStatus, FormStatusHandler} from "./types";
+import * as admin from "firebase-admin";
+import {database} from "firebase-admin";
+import {Timestamp} from "firebase-admin/firestore";
 
-let db: FirebaseDatabaseTypes.Module;
+let db: database.Database;
 let _uid: string;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
 export function initClient(
-    rtdbUrl: string,
+    fbAdmin: admin.app.App,
     uid: string,
     statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
     DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
-    db = firebase
-        .app()
-        .database(rtdbUrl);
+    db = fbAdmin.database();
     _uid = uid;
 
     if (statusMap) {
@@ -26,7 +26,8 @@ export function initClient(
 export const submitCancellableForm = async (
     formData: FormData,
     statusHandler?: FormStatusHandler,
-    timeout?: number
+    uid?: string,
+    timeout?: number,
 ) => {
     const submittedAt = new Date();
 
@@ -74,11 +75,11 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const formRef = db.ref(`forms/${_uid}`).push();
+    const formRef = db.ref(`forms/${uid || _uid}`).push();
     await formRef.set({
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
-        submittedAt: firebase.database.ServerValue.TIMESTAMP
+        submittedAt: Timestamp.now(),
     });
 
     let currentStatus = getStatusValue("submit");
@@ -105,6 +106,7 @@ export const submitCancellableForm = async (
         if (newStatus === getStatusValue("validation-error")
             || newStatus === getStatusValue("security-error")
             || newStatus === getStatusValue("error")
+            || newStatus === getStatusValue("cancelled")
         ) {
             formRef.once('value', (data) => {
                 const currData = data.val();
@@ -113,7 +115,6 @@ export const submitCancellableForm = async (
                 }
             });
         }
-
         if (statusHandler) {
             statusHandler(
                 newStatus,
@@ -149,18 +150,21 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData) {
+export function submitForm(formData: FormData, uid?: string) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
-            (status, data, isLastUpdate) => {
+            (status: FormStatus, data: FormData, isLastUpdate: boolean) => {
                 if (isLastUpdate) {
                     resolve(data);
                 }
-            }
+            },
+            uid,
+            undefined,
         );
     });
 }
+
 
 export function getStatusValue(statusKey: FormStatus): string {
     return _statusMap ? (_statusMap[statusKey] || statusKey) : statusKey;
