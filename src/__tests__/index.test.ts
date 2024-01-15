@@ -1,6 +1,6 @@
 import * as index from '../index';
 import {initClient, submitCancellableForm, submitForm} from '../index';
-import {FormData} from '../types';
+import {FormData, FormStatus} from '../types';
 
 let uid = 'testUserId';
 
@@ -39,16 +39,13 @@ const formRefMock = {
     }),
     off: jest.fn(),
     update: jest.fn(),
-    once: jest.fn((eventType: string, callback: Function) => {
-        const mockSnapshot = {
-            val: () => {
-                return {
-                    "@status": "validation-error",
-                    "@messages": {name: "Invalid"}
-                };
-            }
-        };
-        callback(mockSnapshot);
+    once: jest.fn().mockResolvedValue({
+        val: () => {
+            return {
+                "@status": "validation-error",
+                "@messages": {name: "Invalid"}
+            };
+        }
     }),
 };
 
@@ -166,7 +163,7 @@ describe('submitCancellableForm', () => {
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith(
             {formData: JSON.stringify(formData), submittedAt: {".sv": "timestamp"}, "@status": "submit"});
-        expect(formRefMock.once).toHaveBeenCalledWith('value', expect.any(Function));
+        expect(formRefMock.once).toHaveBeenCalledWith('value');
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submit',
             {...formData, submittedAt, "@status": "submit"}, false);
@@ -256,7 +253,7 @@ describe('submitCancellableForm with timeout', () => {
             ...formData,
             submittedAt,
             "@status": 'error',
-            "@message": "timeout waiting for last status update",
+            "@messages": "timeout waiting for last status update",
         }, true);
         expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
     })
@@ -431,7 +428,7 @@ describe('submitCancellableForm with custom status map', () => {
     });
 });
 
-let finalFormData = {"@status": "finished", ...formData};
+let finalFormData = {"@status": "finished" as FormStatus, ...formData};
 describe('submitForm', () => {
     beforeAll(() => {
         initClient('testRtdbUrl', uid);
