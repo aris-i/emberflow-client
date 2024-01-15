@@ -17,10 +17,10 @@ let statusAtTimeout = {'@status': 'submitted'};
 let _callback: Function;
 let _formData: FormData;
 
-function runCallback() {
-    for (const status of statusTransition) {
-        _callback({
-            val: jest.fn(() => (status)),
+async function runCallback() {
+    for (let i = 0; i < statusTransition.length; i++) {
+        await _callback({
+            val: jest.fn(() => (statusTransition[i])),
             key: "@status",
         });
     }
@@ -80,7 +80,7 @@ describe('submitCancellableForm', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['submitted', 'finished'];
         let submittedForm = await submitCancellableForm(formData, statusHandlerMock, 200);
-        runCallback();
+        await runCallback();
         const submittedAt = new Date();
 
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
@@ -118,7 +118,7 @@ describe('submitCancellableForm', () => {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(true);
         expect(formRefMock.update).toHaveBeenCalledWith({"@status": "cancel"});
@@ -157,7 +157,7 @@ describe('submitCancellableForm', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'validation-error'];
         await submitCancellableForm(formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const submittedAt = new Date();
 
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
@@ -177,7 +177,7 @@ describe('submitCancellableForm', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['submit', 'security-error'];
         await submitCancellableForm(formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const submittedAt = new Date();
 
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
@@ -226,7 +226,7 @@ describe('submitCancellableForm with timeout', () => {
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
-        runCallback();
+        await runCallback();
         const submittedAt = new Date();
 
         expect(submittedForm).toBeDefined();
@@ -268,7 +268,7 @@ describe('submitCancellableForm with timeout', () => {
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
-        runCallback();
+        await runCallback();
         const submittedAt = new Date();
 
         expect(submittedForm).toBeDefined();
@@ -304,7 +304,7 @@ describe('submitCancellableForm with timeout', () => {
         dbRefMock.mockReturnValue(formRefMock);
         const statusHandlerMock = jest.fn();
         const submittedForm = await submitCancellableForm(formData, statusHandlerMock, timeout);
-        runCallback();
+        await runCallback();
         const submittedAt = new Date();
 
         expect(submittedForm).toBeDefined();
@@ -356,7 +356,7 @@ describe('submitCancellableForm with custom status map', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['Submitted', 'Finished'];
         let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const submittedAt = new Date();
 
         expect(dbRefMock.mock.calls[0][0]).toBe(`forms/${uid}`);
@@ -393,7 +393,7 @@ describe('submitCancellableForm with custom status map', () => {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(true);
         expect(formRefMock.update).toHaveBeenCalledWith({"@status": "Cancel"});
