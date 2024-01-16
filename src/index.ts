@@ -102,7 +102,6 @@ export const submitCancellableForm = async (
 
         let messages;
 
-        console.debug("New status:", newStatus);
         if (newStatus === getStatusValue("validation-error")
             || newStatus === getStatusValue("security-error")
             || newStatus === getStatusValue("error")
@@ -110,15 +109,13 @@ export const submitCancellableForm = async (
         ) {
             const data = await formRef.once('value');
             const currData = data.val();
-            console.debug("Current data:", currData);
             if (currData["@messages"]) {
                 messages = currData["@messages"];
             }
         }
 
         if (statusHandler) {
-            console.debug("Calling status handler with messages:", messages);
-            await statusHandler(
+            statusHandler(
                 newStatus,
                 {...formData, submittedAt, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
                 isLastUpdate

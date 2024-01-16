@@ -134,7 +134,7 @@ describe('submitCancellableForm', () => {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
         expect(formRefMock.update).not.toHaveBeenCalledWith();
@@ -146,7 +146,7 @@ describe('submitCancellableForm', () => {
         const statusHandlerMock = jest.fn();
         statusTransition = ['delay', 'submitted'];
         let form = await submitCancellableForm(formData, statusHandlerMock);
-        runCallback();
+        await runCallback();
         await form.unsubscribe();
         expect(formRefMock.off).toHaveBeenCalled();
         expect(formRefMock.off).toHaveBeenCalledWith("child_changed", onReturnMock);
@@ -409,7 +409,7 @@ describe('submitCancellableForm with custom status map', () => {
             ...formData,
             "@delay": 1000,
         }, statusHandlerMock);
-        runCallback();
+        await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
         expect(formRefMock.update).not.toHaveBeenCalledWith();
