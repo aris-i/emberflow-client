@@ -115,7 +115,7 @@ export const submitCancellableForm = async (
             }
         }
         if (statusHandler) {
-            await statusHandler(
+            statusHandler(
                 newStatus,
                 {...formData, submittedAt, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
                 isLastUpdate
