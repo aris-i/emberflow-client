@@ -68,7 +68,7 @@ export const submitCancellableForm = async (
                         ...form,
                         submittedAt,
                         "@status": newStatus,
-                        "@message": "timeout waiting for last status update"
+                        "@messages": "timeout waiting for last status update"
                     }, isLastUpdate);
                 }
             }
