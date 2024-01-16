@@ -67,7 +67,7 @@ export const submitCancellableForm = async (
                         ...formData,
                         submittedAt,
                         "@status": newStatus,
-                        "@message": "timeout waiting for last status update"
+                        "@messages": "timeout waiting for last status update"
                     }, isLastUpdate);
                 }
             }
@@ -85,7 +85,7 @@ export const submitCancellableForm = async (
 
     let isLastUpdate = false;
 
-    const onValueChange = formRef.on('child_changed', snapshot => {
+    const onValueChange = formRef.on('child_changed', async (snapshot) => {
         const changedVal = snapshot.val();
         const changedKey = snapshot.key;
 
@@ -105,13 +105,13 @@ export const submitCancellableForm = async (
         if (newStatus === getStatusValue("validation-error")
             || newStatus === getStatusValue("security-error")
             || newStatus === getStatusValue("error")
+            || newStatus === getStatusValue("cancelled")
         ) {
-            formRef.once('value', (data) => {
-                const currData = data.val();
-                if (currData["@messages"]) {
-                    messages = currData["@messages"];
-                }
-            });
+            const data = await formRef.once('value');
+            const currData = data.val();
+            if (currData["@messages"]) {
+                messages = currData["@messages"];
+            }
         }
 
         if (statusHandler) {
