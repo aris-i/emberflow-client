@@ -109,13 +109,13 @@ export const submitCancellableForm = async (
             || newStatus === getStatusValue("cancelled")
         ) {
             const data = await formRef.once('value');
-                const currData = data.val();
-                if (currData["@messages"]) {
-                    messages = currData["@messages"];
-                }
+            const currData = data.val();
+            if (currData["@messages"]) {
+                messages = currData["@messages"];
+            }
         }
         if (statusHandler) {
-            statusHandler(
+            await statusHandler(
                 newStatus,
                 {...formData, submittedAt, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
                 isLastUpdate
