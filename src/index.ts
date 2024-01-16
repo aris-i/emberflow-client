@@ -68,7 +68,7 @@ export const submitCancellableForm = async (
                         ...form,
                         submittedAt,
                         "@status": newStatus,
-                        "@message": "timeout waiting for last status update"
+                        "@messages": "timeout waiting for last status update"
                     }, isLastUpdate);
                 }
             }
@@ -106,6 +106,7 @@ export const submitCancellableForm = async (
         if (newStatus === getStatusValue("validation-error")
             || newStatus === getStatusValue("security-error")
             || newStatus === getStatusValue("error")
+            || newStatus === getStatusValue("cancelled")
         ) {
             const currData = await get(formRef);
             if (currData.exists()) {

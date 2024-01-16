@@ -267,7 +267,7 @@ describe('submitCancellableForm with timeout', () => {
             ...formData,
             submittedAt,
             "@status": 'error',
-            "@message": "timeout waiting for last status update",
+            "@messages": "timeout waiting for last status update",
         }, true);
         expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", onReturnMock);
     })
