@@ -26,7 +26,6 @@ async function runCallback() {
     }
 }
 
-const onReturnMock = jest.fn();
 const formRefMock = {
     key: 'testDocId',
     set: jest.fn((formData: any) => {
@@ -35,7 +34,6 @@ const formRefMock = {
     push: jest.fn().mockReturnThis(),
     on: jest.fn((eventType: string, callback: Function) => {
         _callback = callback;
-        return onReturnMock;
     }),
     off: jest.fn(),
     update: jest.fn(),
@@ -149,7 +147,7 @@ describe('submitCancellableForm', () => {
         await runCallback();
         await form.unsubscribe();
         expect(formRefMock.off).toHaveBeenCalled();
-        expect(formRefMock.off).toHaveBeenCalledWith("child_changed", onReturnMock);
+        expect(formRefMock.off).toHaveBeenCalledWith("child_changed", _callback);
     });
 
     it('validation-error status should pass @messages in statusHandlers', async () => {
@@ -210,7 +208,6 @@ describe('submitCancellableForm with timeout', () => {
         once: jest.fn().mockResolvedValue({val: valMock}),
         on: jest.fn((eventType: string, callback: Function) => {
             _callback = callback;
-            return onReturnMock;
         }),
         off: jest.fn(),
         update: jest.fn(),
@@ -424,7 +421,7 @@ describe('submitCancellableForm with custom status map', () => {
         runCallback();
         await form.unsubscribe();
         expect(formRefMock.off).toHaveBeenCalled();
-        expect(formRefMock.off).toHaveBeenCalledWith("child_changed", onReturnMock);
+        expect(formRefMock.off).toHaveBeenCalledWith("child_changed", _callback);
     });
 });
 
