@@ -1,5 +1,6 @@
 import {firebase, FirebaseDatabaseTypes} from "@react-native-firebase/database";
 import {FormData, FormStatus, FormStatusHandler} from "./types";
+import DataSnapshot = FirebaseDatabaseTypes.DataSnapshot;
 
 let db: FirebaseDatabaseTypes.Module;
 let _uid: string;
@@ -85,7 +86,7 @@ export const submitCancellableForm = async (
 
     let isLastUpdate = false;
 
-    const onValueChange = formRef.on('child_changed', async (snapshot) => {
+    const onValueChange = async (snapshot: DataSnapshot) => {
         const changedVal = snapshot.val();
         const changedKey = snapshot.key;
 
@@ -122,7 +123,9 @@ export const submitCancellableForm = async (
             );
         }
         currentStatus = newStatus;
-    });
+    };
+
+    formRef.on('child_changed', onValueChange);
 
     startTimeoutMonitor();
 
