@@ -1,7 +1,7 @@
 import {FormData, FormStatus, FormStatusHandler} from "./types";
 import {
     Database, get, getDatabase, off, onChildChanged, push,
-    ref, serverTimestamp, set, update
+    ref, serverTimestamp, set, update, DataSnapshot,
 } from "firebase/database";
 import {FirebaseApp} from "firebase/app";
 
@@ -85,7 +85,7 @@ export const submitCancellableForm = async (
     let currentStatus = getStatusValue("submit");
     let isLastUpdate = false;
 
-    const onValueChange = onChildChanged(formRef, async (snapshot) => {
+    const onValueChange = async (snapshot: DataSnapshot) => {
         const changedVal = snapshot.val();
         const changedKey = snapshot.key;
 
@@ -125,7 +125,9 @@ export const submitCancellableForm = async (
             );
         }
         currentStatus = newStatus;
-    });
+    };
+
+    onChildChanged(formRef, onValueChange);
 
     startTimeoutMonitor();
 
