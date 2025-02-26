@@ -1,6 +1,6 @@
 {
-  "name": "@primeanalytiq/emberflow-admin-client",
-  "version": "1.2.0",
+  "name": "emberflow-admin-client",
+  "version": "1.2.4",
   "description": "Utility library for front end clients that allow submitting forms to emberflow powered backends",
   "main": "lib/index.js",
   "types": "lib/index.d.js",
