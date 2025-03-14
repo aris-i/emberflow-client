@@ -42,12 +42,12 @@ export const submitCancellableForm = async (
     }
 
     function startTimeoutMonitor() {
-        setTimeout(async () => {
+        return setTimeout(async () => {
             if (isLastUpdate) {
                 return;
             }
 
-            off(formRef, 'child_changed', onValueChange);
+            off(formRef, 'value', onValueChange);
 
             const snapshot = await get(formRef);
             const form = snapshot.val();
@@ -86,20 +86,12 @@ export const submitCancellableForm = async (
     let isLastUpdate = false;
 
     const onValueChange = async (snapshot: DataSnapshot) => {
-        const changedVal = snapshot.val();
-        const changedKey = snapshot.key;
-
-        if (!changedKey || changedKey !== "@status") {
-            return;
-        }
-
-        const newStatus = changedVal as FormStatus;
-        let isLastUpdate = false;
+        const {"@status": newStatus} = snapshot.val();
 
         // Check if the new status is a "terminal state" (e.g., finished, canceled, or an error)
         if (isTerminalState(newStatus)) {
             isLastUpdate = true;
-            off(formRef, 'child_changed', onValueChange);
+            off(formRef, 'value', onValueChange);
         }
 
         let messages;
@@ -118,6 +110,9 @@ export const submitCancellableForm = async (
         }
 
         if (statusHandler) {
+            if (isLastUpdate) {
+                clearTimeout(timeoutId);
+            }
             statusHandler(
                 newStatus,
                 {...formData, submittedAt, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
@@ -129,7 +124,7 @@ export const submitCancellableForm = async (
 
     onChildChanged(formRef, onValueChange);
 
-    startTimeoutMonitor();
+    const timeoutId = startTimeoutMonitor();
 
     return {
         cancel: async () => {
@@ -149,7 +144,7 @@ export const submitCancellableForm = async (
             }
         },
         unsubscribe: () => {
-            off(formRef, 'child_changed', onValueChange);
+            off(formRef, 'value', onValueChange);
         }
     }
 }

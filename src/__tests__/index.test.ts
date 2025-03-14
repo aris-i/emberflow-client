@@ -22,8 +22,7 @@ let _formData: FormData;
 async function runCallback() {
     for (const status of statusTransition) {
         await _callback({
-            val: jest.fn(() => (status)),
-            key: "@status",
+            val: jest.fn(() => ({"@status": status})),
         });
     }
 }
@@ -113,7 +112,7 @@ describe('submitCancellableForm', () => {
             {...formData, submittedAt, "@status": "submitted"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('finished',
             {...formData, submittedAt, "@status": "finished"}, true);
-        expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", expect.any(Function));
+        expect(off).toHaveBeenCalledWith(onReturnMock, "value", expect.any(Function));
     });
 
     it('cancel should return false if form has no @delay', async () => {
@@ -167,7 +166,7 @@ describe('submitCancellableForm', () => {
         await runCallback();
         await form.unsubscribe();
         expect(off).toHaveBeenCalled();
-        expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", _callback);
+        expect(off).toHaveBeenCalledWith(onReturnMock, "value", _callback);
     });
 
     it('validation-error status should pass @messages in statusHandlers', async () => {
@@ -193,7 +192,7 @@ describe('submitCancellableForm', () => {
             {...formData, submittedAt, "@status": "submit"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('validation-error',
             {...formData, submittedAt, "@status": "validation-error", "@messages": {name: "Invalid"}}, true);
-        expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", expect.any(Function));
+        expect(off).toHaveBeenCalledWith(onReturnMock, "value", expect.any(Function));
     });
 
     it('security-error status should pass @messages in statusHandlers', async () => {
@@ -216,7 +215,7 @@ describe('submitCancellableForm', () => {
             {...formData, submittedAt, "@status": "submit"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('security-error',
             {...formData, submittedAt, "@status": "security-error", "@messages": {"name": "Invalid"}}, true);
-        expect(off).toHaveBeenCalledWith(onReturnMock, 'child_changed', expect.any(Function));
+        expect(off).toHaveBeenCalledWith(onReturnMock, 'value', expect.any(Function));
     });
 });
 
@@ -268,7 +267,7 @@ describe('submitCancellableForm with timeout', () => {
             "@status": 'error',
             "@messages": "timeout waiting for last status update",
         }, true);
-        expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", _callback);
+        expect(off).toHaveBeenCalledWith(onReturnMock, "value", _callback);
     })
 
     it("should not return an error status and a message when submitCancellableForm reaches the timeout, and the status is in a terminal state", async () => {
@@ -305,8 +304,8 @@ describe('submitCancellableForm with timeout', () => {
         }, true);
 
         await jest.advanceTimersByTime(timeout);
-        expect(statusHandlerMock).toHaveBeenCalledTimes(4);
-        expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", _callback);
+        expect(statusHandlerMock).toHaveBeenCalledTimes(3);
+        expect(off).toHaveBeenCalledWith(onReturnMock, "value", _callback);
     })
 
     it("should return a final update when submitCancellableForm reaches the timeout, and the status is in a terminal state", async () => {
@@ -341,7 +340,7 @@ describe('submitCancellableForm with timeout', () => {
             submittedAt,
             "@status": 'finished',
         }, true);
-        expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", _callback);
+        expect(off).toHaveBeenCalledWith(onReturnMock, "value", _callback);
     })
 })
 
@@ -388,7 +387,7 @@ describe('submitCancellableForm with custom status map', () => {
             {...formData, submittedAt, "@status": "Submitted"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('Finished',
             {...formData, submittedAt, "@status": "Finished"}, true);
-        expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", expect.any(Function));
+        expect(off).toHaveBeenCalledWith(onReturnMock, "value", expect.any(Function));
     });
 
     it('cancel should return false if form has no @delay', async () => {
@@ -441,7 +440,7 @@ describe('submitCancellableForm with custom status map', () => {
         await runCallback();
         await form.unsubscribe();
         expect(off).toHaveBeenCalled();
-        expect(off).toHaveBeenCalledWith(onReturnMock, "child_changed", _callback);
+        expect(off).toHaveBeenCalledWith(onReturnMock, "value", _callback);
     });
 });
 
