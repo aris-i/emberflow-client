@@ -19,8 +19,7 @@ let _formData: FormData;
 async function runCallback() {
     for (let i = 0; i < statusTransition.length; i++) {
         await _callback({
-            val: jest.fn(() => (statusTransition[i])),
-            key: "@status",
+            val: jest.fn(() => ({"@status": statusTransition[i]})),
         });
     }
 }
@@ -81,13 +80,13 @@ describe('submitCancellableForm', () => {
         expect(typeof submittedForm.cancel).toBe('function');
         expect(formRefMock.set).toHaveBeenCalledWith(
             {formData: JSON.stringify(formData), submittedAt: {_nanoseconds, _seconds}, "@status": "submit"});
-        expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.on).toHaveBeenCalledWith('value', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submitted',
             {...formData, submittedAt, "@status": "submitted"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('finished',
             {...formData, submittedAt, "@status": "finished"}, true);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.off).toHaveBeenCalledWith('value', expect.any(Function));
     });
 
     it('cancel should return false if form has no @delay', async () => {
@@ -141,7 +140,7 @@ describe('submitCancellableForm', () => {
         await runCallback();
         await form.unsubscribe();
         expect(formRefMock.off).toHaveBeenCalled();
-        expect(formRefMock.off).toHaveBeenCalledWith("child_changed", _callback);
+        expect(formRefMock.off).toHaveBeenCalledWith("value", _callback);
     });
 
     it('validation-error status should pass @messages in statusHandlers', async () => {
@@ -162,7 +161,7 @@ describe('submitCancellableForm', () => {
             {...formData, submittedAt, "@status": "submit"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('validation-error',
             {...formData, submittedAt, "@status": "validation-error", "@messages": {"name": "Invalid"}}, true);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.off).toHaveBeenCalledWith('value', expect.any(Function));
     });
 
     it('security-error status should pass @messages in statusHandlers', async () => {
@@ -177,13 +176,13 @@ describe('submitCancellableForm', () => {
         expect(formRefMock.ref).toHaveBeenCalledWith(`forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith(
             {formData: JSON.stringify(formData), submittedAt: {_nanoseconds, _seconds}, "@status": "submit"});
-        expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.on).toHaveBeenCalledWith('value', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('submit',
             {...formData, submittedAt, "@status": "submit"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('security-error',
             {...formData, submittedAt, "@status": "security-error", "@messages": {"name": "Invalid"}}, true);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.off).toHaveBeenCalledWith('value', expect.any(Function));
     });
 });
 
@@ -230,7 +229,7 @@ describe('submitCancellableForm with timeout', () => {
             "@status": 'error',
             "@messages": "timeout waiting for last status update",
         }, true);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.off).toHaveBeenCalledWith('value', expect.any(Function));
     })
 
     it("should not return an error status and a message when submitCancellableForm reaches the timeout, and the status is in a terminal state", async () => {
@@ -265,7 +264,7 @@ describe('submitCancellableForm with timeout', () => {
 
         await jest.advanceTimersByTime(timeout);
         expect(statusHandlerMock).toHaveBeenCalledTimes(3);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.off).toHaveBeenCalledWith('value', expect.any(Function));
     })
 
     it("should return a final update when submitCancellableForm reaches the timeout, and the status is in a terminal state", async () => {
@@ -300,7 +299,7 @@ describe('submitCancellableForm with timeout', () => {
             submittedAt,
             "@status": 'finished',
         }, true);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.off).toHaveBeenCalledWith('value', expect.any(Function));
     })
 })
 
@@ -343,13 +342,13 @@ describe('submitCancellableForm with custom status map', () => {
         expect(formRefMock.set).toHaveBeenCalledWith(
             {formData: JSON.stringify(formData), submittedAt: {_nanoseconds, _seconds}, "@status": "Submit"}
         );
-        expect(formRefMock.on).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.on).toHaveBeenCalledWith('value', expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith('Submitted',
             {...formData, submittedAt, "@status": "Submitted"}, false);
         expect(statusHandlerMock).toHaveBeenCalledWith('Finished',
             {...formData, submittedAt, "@status": "Finished"}, true);
-        expect(formRefMock.off).toHaveBeenCalledWith('child_changed', expect.any(Function));
+        expect(formRefMock.off).toHaveBeenCalledWith('value', expect.any(Function));
     });
 
     it('cancel should return false if form has no @delay', async () => {
@@ -403,7 +402,7 @@ describe('submitCancellableForm with custom status map', () => {
         await runCallback();
         await form.unsubscribe();
         expect(formRefMock.off).toHaveBeenCalled();
-        expect(formRefMock.off).toHaveBeenCalledWith("child_changed", _callback);
+        expect(formRefMock.off).toHaveBeenCalledWith("value", _callback);
     });
 });
 

@@ -41,12 +41,12 @@ export const submitCancellableForm = async (
     }
 
     function startTimeoutMonitor() {
-        setTimeout(async () => {
+        return setTimeout(async () => {
             if (isLastUpdate) {
                 return;
             }
 
-            formRef.off('child_changed', onValueChange);
+            formRef.off('value', onValueChange);
 
             const snapshot = await formRef.once('value');
 
@@ -88,18 +88,11 @@ export const submitCancellableForm = async (
     let isLastUpdate = false;
 
     const onValueChange = async (snapshot: DataSnapshot) => {
-        const changedVal = snapshot.val();
-        const changedKey = snapshot.key;
-
-        if (!changedKey || changedKey !== "@status") {
-            return;
-        }
-
-        const newStatus = changedVal as FormStatus;
+        const {"@status": newStatus} = snapshot.val();
 
         if (isTerminalState(newStatus)) {
             isLastUpdate = true;
-            formRef.off('child_changed', onValueChange);
+            formRef.off('value', onValueChange);
         }
 
         let messages;
@@ -116,6 +109,9 @@ export const submitCancellableForm = async (
             }
         }
         if (statusHandler) {
+            if (isLastUpdate) {
+                clearTimeout(timeoutId);
+            }
             statusHandler(
                 newStatus,
                 {...formData, submittedAt, "@status": newStatus, ...(messages ? {"@messages": messages} : {})},
@@ -125,9 +121,9 @@ export const submitCancellableForm = async (
         currentStatus = newStatus;
     };
 
-    formRef.on('child_changed', onValueChange);
+    formRef.on('value', onValueChange);
 
-    startTimeoutMonitor();
+    const timeoutId = startTimeoutMonitor();
 
     return {
         cancel: async () => {
@@ -147,7 +143,7 @@ export const submitCancellableForm = async (
             }
         },
         unsubscribe: () => {
-            formRef.off('child_changed', onValueChange);
+            formRef.off('value', onValueChange);
         }
     }
 }
