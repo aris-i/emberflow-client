@@ -1,6 +1,6 @@
 {
   "name": "emberflow-web-client",
-  "version": "1.1.8",
+  "version": "1.2.5",
   "description": "Utility library for front end clients that allow submitting forms to emberflow powered backends",
   "main": "lib/index.js",
   "types": "lib/index.d.js",
