@@ -1,21 +1,33 @@
-import {firebase, FirebaseDatabaseTypes} from "@react-native-firebase/database";
+import {
+    FirebaseDatabaseTypes,
+    getDatabase,
+    push,
+    ref,
+    serverTimestamp,
+    set,
+    update,
+    onValue,
+    get,
+} from "@react-native-firebase/database";
 import {FormData, FormStatus, FormStatusHandler} from "./types";
+import {ReactNativeFirebase} from "@react-native-firebase/app";
+import FirebaseApp = ReactNativeFirebase.FirebaseApp;
 
 let db: FirebaseDatabaseTypes.Module;
 let _uid: string;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
+
 export function initClient(
-    rtdbUrl: string,
+    app: FirebaseApp,
     uid: string,
     statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
     DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
-    db = firebase
-        .app()
-        .database(rtdbUrl);
+
+    db = getDatabase(app);
     _uid = uid;
 
     if (statusMap) {
@@ -44,9 +56,9 @@ export const submitCancellableForm = async (
                 return;
             }
 
-            formRef.off('value', onValueChange);
+            unsubscribe();
 
-            const snapshot = await formRef.once('value');
+            const snapshot = await get(formRef);
 
             const formData = snapshot.val();
 
@@ -74,11 +86,11 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const formRef = db.ref(`forms/${_uid}`).push();
-    await formRef.set({
+    const formRef = push(ref(db), `forms/${_uid}`);
+    await set(formRef, {
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
-        submittedAt: firebase.database.ServerValue.TIMESTAMP
+        submittedAt: serverTimestamp(),
     });
 
     let currentStatus = getStatusValue("submit");
@@ -90,7 +102,7 @@ export const submitCancellableForm = async (
 
         if (isTerminalState(newStatus)) {
             isLastUpdate = true;
-            formRef.off('value', onValueChange);
+            unsubscribe();
         }
 
         let messages;
@@ -100,7 +112,7 @@ export const submitCancellableForm = async (
             || newStatus === getStatusValue("error")
             || newStatus === getStatusValue("cancelled")
         ) {
-            const data = await formRef.once('value');
+            const data = await get(formRef);
             const currData = data.val();
             if (currData["@messages"]) {
                 messages = currData["@messages"];
@@ -120,7 +132,7 @@ export const submitCancellableForm = async (
         currentStatus = newStatus;
     };
 
-    formRef.on('value', onValueChange);
+    const unsubscribe = onValue(formRef, onValueChange);
 
     const timeoutId = startTimeoutMonitor();
 
@@ -130,7 +142,7 @@ export const submitCancellableForm = async (
             if (delay) {
                 if (currentStatus === getStatusValue("delay")) {
                     console.log("Cancelling form");
-                    await formRef.update({"@status": getStatusValue("cancel")});
+                    await update(formRef, {"@status": getStatusValue("cancel")});
                     return true;
                 } else {
                     console.log("Delay has elapsed. Can't cancel the form");
@@ -141,9 +153,7 @@ export const submitCancellableForm = async (
                 return false;
             }
         },
-        unsubscribe: () => {
-            formRef.off('value', onValueChange);
-        }
+        unsubscribe,
     }
 }
 
@@ -151,7 +161,7 @@ export function submitForm(formData: FormData) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
-            (status, data, isLastUpdate) => {
+            (_, data, isLastUpdate) => {
                 if (isLastUpdate) {
                     resolve(data);
                 }
