@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "ES2020",                      // ← allows newer JS features
     "module": "commonjs",
     "outDir": "lib",
     "strict": true,
     "esModuleInterop": true,
-    "declaration": true
+    "declaration": true,
+    "skipLibCheck": true                     // ← 💣 disables type-checking in node_modules
   },
   "include": ["src"],
   "exclude": ["src/__tests__"]
 }
-
