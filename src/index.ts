@@ -7,7 +7,7 @@ import {
     set,
     update,
     onValue,
-    get,
+    get, child,
 } from "@react-native-firebase/database";
 import {FormData, FormStatus, FormStatusHandler} from "./types";
 import {ReactNativeFirebase} from "@react-native-firebase/app";
@@ -86,7 +86,7 @@ export const submitCancellableForm = async (
         }, timeout || DEFAULT_TIMEOUT);
     }
 
-    const formRef = push(ref(db), `forms/${_uid}`);
+    const formRef = push(child(ref(db), `forms/${_uid}`));
     await set(formRef, {
         "@status": getStatusValue("submit"),
         formData: JSON.stringify(formData),
