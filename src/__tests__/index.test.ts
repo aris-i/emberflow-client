@@ -7,6 +7,7 @@ const formRefMock = {
     set: jest.fn((formData: any) => {
         _formData = formData;
     }),
+    child: jest.fn().mockReturnValue({}),
     push: jest.fn(),
     onValue: jest.fn((query: Query, callback: Function) => {
         _callback = callback;
@@ -80,7 +81,7 @@ describe('submitCancellableForm', () => {
         let submittedForm = await submitCancellableForm(formData, statusHandlerMock, 200);
         await runCallback();
 
-        expect(formRefMock.push).toHaveBeenCalledWith({}, `forms/${uid}`);
+        expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
         expect(submittedForm).toBeDefined();
         expect(typeof submittedForm.cancel).toBe('function');
         expect(typeof submittedForm.unsubscribe).toBe('function');
@@ -160,7 +161,7 @@ describe('submitCancellableForm', () => {
         await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
 
-        expect(formRefMock.push).toHaveBeenCalledWith({}, `forms/${uid}`);
+        expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith(formRef,
             {formData: JSON.stringify(formData), submittedAt, "@status": "submit"});
         expect(formRefMock.get).toHaveBeenCalledWith(formRef);
@@ -186,7 +187,7 @@ describe('submitCancellableForm', () => {
         await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
 
-        expect(formRefMock.push).toHaveBeenCalledWith({}, `forms/${uid}`);
+        expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith(formRef,
             {formData: JSON.stringify(formData), submittedAt, "@status": "submit"});
         expect(formRefMock.onValue).toHaveBeenCalledWith(formRef, expect.any(Function));
@@ -347,7 +348,7 @@ describe('submitCancellableForm with custom status map', () => {
         let cancelForm = await submitCancellableForm(formData, statusHandlerMock);
         await runCallback();
 
-        expect(formRefMock.push).toHaveBeenCalledWith({}, `forms/${uid}`);
+        expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe('function');
         expect(formRefMock.set).toHaveBeenCalledWith(formRef,
