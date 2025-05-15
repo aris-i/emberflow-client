@@ -65,11 +65,11 @@ jest.mock('@react-native-firebase/app', () => {
     }
 });
 
-const app = initializeApp({appId: "123", projectId: "456"});
 const formRef = jest.fn();
 
 describe('submitCancellableForm', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
+        const app = await initializeApp({appId: "123", projectId: "456"});
         initClient(app, uid);
     });
     it('should set form data and listen for status changes', async () => {
@@ -201,7 +201,8 @@ describe('submitCancellableForm', () => {
 });
 
 describe('submitCancellableForm with timeout', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
+        const app = await initializeApp({appId: "123", projectId: "456"});
         initClient(app, uid);
     });
 
@@ -320,8 +321,9 @@ describe('submitCancellableForm with timeout', () => {
 })
 
 describe('submitCancellableForm with custom status map', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
         jest.clearAllMocks();
+        const app = await initializeApp({appId: "123", projectId: "456"});
         initClient(app,
             uid,
             {
@@ -416,7 +418,8 @@ describe('submitCancellableForm with custom status map', () => {
 
 let finalFormData = {"@status": "finished" as FormStatus, ...formData};
 describe('submitForm', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
+        const app = await initializeApp({appId: "123", projectId: "456"});
         initClient(app, uid);
         jest.spyOn(index, 'submitCancellableForm').mockImplementation((formData, statusHandler) => {
             if (statusHandler) {
