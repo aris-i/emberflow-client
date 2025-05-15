@@ -24,7 +24,7 @@ const formRefMock = {
 import * as index from '../index';
 import {initClient, submitCancellableForm, submitForm} from '../index';
 import {FormData, FormStatus} from '../types';
-import {initializeApp} from "@react-native-firebase/app";
+import {getApp} from "@react-native-firebase/app";
 import {Query} from "@react-native-firebase/database/lib/modular/query";
 
 let uid = 'testUserId';
@@ -61,11 +61,11 @@ jest.mock('@react-native-firebase/database', () => {
 jest.mock('@react-native-firebase/app', () => {
     return {
         __esModule: true,
-        initializeApp: jest.fn(),
+        getApp: jest.fn(),
     }
 });
 
-const app = initializeApp({appId: "123", projectId: "456"});
+const app = getApp();
 const formRef = jest.fn();
 
 describe('submitCancellableForm', () => {
