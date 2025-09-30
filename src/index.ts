@@ -6,28 +6,15 @@ import DataSnapshot = database.DataSnapshot;
 
 let db: database.Database;
 let _uid: string;
+let _appVersion: string;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
-
-export function initClient(
-    fbAdmin: admin.app.App,
-    uid: string,
-    statusMap?: Record<FormStatus, string>,
-    defaultTimeout?: number
-) {
-    DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
-    db = fbAdmin.database();
-    _uid = uid;
-
-    if (statusMap) {
-        _statusMap = statusMap;
-    }
-}
 
 export const submitCancellableForm = async (
     formData: FormData,
     statusHandler?: FormStatusHandler,
     uid?: string,
+    appVersion?: string,
     timeout?: number,
 ) => {
     const submittedAt = new Date();
@@ -79,7 +66,10 @@ export const submitCancellableForm = async (
     const formRef = db.ref(`forms/${uid || _uid}`).push();
     await formRef.set({
         "@status": getStatusValue("submit"),
-        formData: JSON.stringify(formData),
+        formData: JSON.stringify({
+            ...formData,
+            "@appVersion": appVersion || _appVersion,
+        }),
         submittedAt: Timestamp.now(),
     });
 
@@ -148,17 +138,34 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData, uid?: string) {
+export function initClient(
+    fbAdmin: admin.app.App,
+    uid: string,
+    appVersion: string,
+    statusMap?: Record<FormStatus, string>,
+    defaultTimeout?: number
+) {
+    DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
+    db = fbAdmin.database();
+    _uid = uid;
+    _appVersion = appVersion;
+
+    if (statusMap) {
+        _statusMap = statusMap;
+    }
+}
+
+export function submitForm(formData: FormData, uid?: string, appVersion?: string) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
-            (status: FormStatus, data: FormData, isLastUpdate: boolean) => {
+            (_: FormStatus, data: FormData, isLastUpdate: boolean) => {
                 if (isLastUpdate) {
                     resolve(data);
                 }
             },
             uid,
-            undefined,
+            appVersion,
         );
     });
 }
