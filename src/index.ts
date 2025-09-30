@@ -91,19 +91,11 @@ export const submitCancellableForm = async (
     }
 
     const formRef = push(child(ref(db), `forms/${_uid}`));
-    const {"@metadata": metadata = {}} = formData;
-    const {app = {}} = metadata;
     await set(formRef, {
         "@status": getStatusValue("submit"),
         formData: JSON.stringify({
             ...formData,
-            "@metadata": {
-                ...metadata,
-                "app": {
-                    ...app,
-                    "version": appVersion || _appVersion,
-                }
-            }
+            "@appVersion": appVersion || _appVersion,
         }),
         submittedAt: serverTimestamp(),
     });

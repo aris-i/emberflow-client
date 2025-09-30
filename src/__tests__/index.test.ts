@@ -36,13 +36,9 @@ const formData: FormData = {
     "@docPath": "topics/topicId",
     "name": "testName",
 };
-const formDataWithMetaData: FormData = {
+const formDataWithAppVersion: FormData = {
     ...formData,
-    "@metadata": {
-        "app": {
-            "version": "0.0.1",
-        },
-    },
+    "@appVersion": "0.0.1",
 }
 
 let statusTransition = ["submitted"];
@@ -96,7 +92,7 @@ describe("submitCancellableForm", () => {
         expect(typeof submittedForm.cancel).toBe("function");
         expect(typeof submittedForm.unsubscribe).toBe("function");
         expect(formRefMock.set).toHaveBeenCalledWith(formRef,
-            {formData: JSON.stringify(formDataWithMetaData), submittedAt, "@status": "submit"});
+            {formData: JSON.stringify(formDataWithAppVersion), submittedAt, "@status": "submit"});
         expect(formRefMock.onValue).toHaveBeenCalledWith(formRef, expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith("submitted",
@@ -173,7 +169,7 @@ describe("submitCancellableForm", () => {
 
         expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith(formRef,
-            {formData: JSON.stringify(formDataWithMetaData), submittedAt, "@status": "submit"});
+            {formData: JSON.stringify(formDataWithAppVersion), submittedAt, "@status": "submit"});
         expect(formRefMock.get).toHaveBeenCalledWith(formRef);
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith("submit",
@@ -199,7 +195,7 @@ describe("submitCancellableForm", () => {
 
         expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
         expect(formRefMock.set).toHaveBeenCalledWith(formRef,
-            {formData: JSON.stringify(formDataWithMetaData), submittedAt, "@status": "submit"});
+            {formData: JSON.stringify(formDataWithAppVersion), submittedAt, "@status": "submit"});
         expect(formRefMock.onValue).toHaveBeenCalledWith(formRef, expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith("submit",
@@ -363,7 +359,7 @@ describe("submitCancellableForm with custom status map", () => {
         expect(cancelForm).toBeDefined();
         expect(typeof cancelForm.cancel).toBe("function");
         expect(formRefMock.set).toHaveBeenCalledWith(formRef,
-            {formData: JSON.stringify(formDataWithMetaData), submittedAt, "@status": "Submit"});
+            {formData: JSON.stringify(formDataWithAppVersion), submittedAt, "@status": "Submit"});
         expect(formRefMock.onValue).toHaveBeenCalledWith(formRef, expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith("Submitted",
@@ -433,11 +429,7 @@ describe("submitForm", () => {
             if (statusHandler) {
                 statusHandler("finished", {
                     ...finalFormData,
-                    "@metadata": {
-                        "app": {
-                            "version": version || appVersion,
-                        },
-                    },
+                    "@appVersion": version || appVersion,
                 }, true);
             }
             return {
@@ -447,28 +439,25 @@ describe("submitForm", () => {
         });
     });
 
-    it("should return formData with @status and @metadata", async () => {
+    it("should return formData with @status", async () => {
         const submittedForm = await submitForm(formData);
 
         expect(submittedForm).toEqual({
             ...finalFormData,
-            "@metadata": {
-                "app": {
-                    "version": "0.0.1",
-                },
-            },
+            "@appVersion": appVersion,
+
         });
     });
 
     it("should return app version from initClient", async () => {
-        const {"@metadata": {"app": {version}}} = await submitForm(formData);
+        const {"@appVersion": version} = await submitForm(formData);
 
         expect(version).toEqual(appVersion);
     });
 
     it("should return app version from submitForm", async () => {
         const customAppVersion = "0.0.2";
-        const {"@metadata": {"app": {version}}} = await submitForm(formData, customAppVersion);
+        const {"@appVersion": version} = await submitForm(formData, customAppVersion);
 
         expect(version).toEqual(customAppVersion);
     });
