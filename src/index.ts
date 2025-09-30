@@ -15,6 +15,7 @@ import FirebaseApp = ReactNativeFirebase.FirebaseApp;
 
 let db: FirebaseDatabaseTypes.Module;
 let _uid: string;
+let _appVersion: string;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
@@ -22,6 +23,7 @@ let DEFAULT_TIMEOUT = 60000;
 export function initClient(
     app: FirebaseApp,
     uid: string,
+    appVersion: string,
     statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
@@ -29,6 +31,7 @@ export function initClient(
 
     db = getDatabase(app);
     _uid = uid;
+    _appVersion = appVersion;
 
     if (statusMap) {
         _statusMap = statusMap;
@@ -38,6 +41,7 @@ export function initClient(
 export const submitCancellableForm = async (
     formData: FormData,
     statusHandler?: FormStatusHandler,
+    appVersion?: string,
     timeout?: number
 ) => {
     const submittedAt = new Date();
@@ -89,7 +93,10 @@ export const submitCancellableForm = async (
     const formRef = push(child(ref(db), `forms/${_uid}`));
     await set(formRef, {
         "@status": getStatusValue("submit"),
-        formData: JSON.stringify(formData),
+        formData: JSON.stringify({
+            ...formData,
+            "@appVersion": appVersion || _appVersion,
+        }),
         submittedAt: serverTimestamp(),
     });
 
@@ -157,7 +164,7 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData) {
+export function submitForm(formData: FormData, appVersion?: string) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
@@ -165,7 +172,8 @@ export function submitForm(formData: FormData) {
                 if (isLastUpdate) {
                     resolve(data);
                 }
-            }
+            },
+            appVersion,
         );
     });
 }
