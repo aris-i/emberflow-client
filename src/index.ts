@@ -7,12 +7,14 @@ import {FirebaseApp} from "firebase/app";
 
 let db: Database;
 let _uid: string;
+let _appVersion: string;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
 export function initClient(
     app: FirebaseApp,
     uid: string,
+    appVersion: string,
     url?: string,
     statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
@@ -20,6 +22,7 @@ export function initClient(
     DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
     db = getDatabase(app, url);
     _uid = uid;
+    _appVersion = appVersion;
 
     if (statusMap) {
         _statusMap = statusMap;
@@ -28,6 +31,7 @@ export function initClient(
 
 export const submitCancellableForm = async (
     formData: FormData,
+    appVersion?: string,
     statusHandler?: FormStatusHandler,
     timeout?: number
 ) => {
@@ -78,7 +82,10 @@ export const submitCancellableForm = async (
     const formRef = push(ref(db, `forms/${_uid}`));
     await set(formRef, {
         "@status": getStatusValue("submit"),
-        formData: JSON.stringify(formData),
+        formData: JSON.stringify({
+            ...formData,
+            "@appVersion": appVersion || _appVersion,
+        }),
         submittedAt: serverTimestamp(),
     });
 
@@ -149,11 +156,12 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData) {
+export function submitForm(formData: FormData, appVersion?: string) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
-            (status, formData, isLastUpdate) => {
+            appVersion,
+            (_, formData, isLastUpdate) => {
                 if (isLastUpdate) {
                     resolve(formData);
                 }
