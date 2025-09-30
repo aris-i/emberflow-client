@@ -10,6 +10,23 @@ let _appVersion: string;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
+export function initClient(
+    fbAdmin: admin.app.App,
+    uid: string,
+    appVersion: string,
+    statusMap?: Record<FormStatus, string>,
+    defaultTimeout?: number
+) {
+    DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
+    db = fbAdmin.database();
+    _uid = uid;
+    _appVersion = appVersion;
+
+    if (statusMap) {
+        _statusMap = statusMap;
+    }
+}
+
 export const submitCancellableForm = async (
     formData: FormData,
     statusHandler?: FormStatusHandler,
@@ -138,24 +155,7 @@ export const submitCancellableForm = async (
     }
 }
 
-export function initClient(
-    fbAdmin: admin.app.App,
-    uid: string,
-    appVersion: string,
-    statusMap?: Record<FormStatus, string>,
-    defaultTimeout?: number
-) {
-    DEFAULT_TIMEOUT = defaultTimeout || DEFAULT_TIMEOUT;
-    db = fbAdmin.database();
-    _uid = uid;
-    _appVersion = appVersion;
-
-    if (statusMap) {
-        _statusMap = statusMap;
-    }
-}
-
-export function submitForm(formData: FormData, uid?: string, appVersion?: string) {
+export function submitForm(formData: FormData, uid?: string, appVersion?: string, timeout?: number) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
@@ -166,6 +166,7 @@ export function submitForm(formData: FormData, uid?: string, appVersion?: string
             },
             uid,
             appVersion,
+            timeout,
         );
     });
 }
