@@ -156,7 +156,7 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData, appVersion?: string) {
+export function submitForm(formData: FormData, appVersion?: string, timeout?: number) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
@@ -165,7 +165,8 @@ export function submitForm(formData: FormData, appVersion?: string) {
                 if (isLastUpdate) {
                     resolve(formData);
                 }
-            }
+            },
+            timeout
         );
     });
 }
