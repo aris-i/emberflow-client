@@ -11,6 +11,9 @@ let appVersion = "0.0.1";
 const formData: FormData = {
     "@actionType": "create",
     "@docPath": `topics/topicId`,
+    "@metadata": {
+        "sample": "metadata",
+    },
     "name": "testName",
 };
 const formDataWithAppVersion: FormData = {
@@ -92,6 +95,8 @@ describe("submitCancellableForm", () => {
         initClient(
             app,
             uid,
+            appVersion,
+            {},
             "https://testDatabaseName.testRegion.firebasedatabase.app",
         );
     });
@@ -222,6 +227,54 @@ describe("submitCancellableForm", () => {
             {...formData, submittedAt, "@status": "security-error", "@messages": {"name": "Invalid"}}, true);
         expect(off).toHaveBeenCalledWith(onReturnMock, "value", expect.any(Function));
     });
+
+    it("should merge metadata from initClient and submitForm", async () => {
+        const initMetadata = {"test": "another metadata"};
+        initClient(
+            app,
+            uid,
+            appVersion,
+            initMetadata,
+            "https://testDatabaseName.testRegion.firebasedatabase.app",
+        );
+        dbRefMock.mockReturnValue(formRefMock);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ["submitted", "finished"];
+        await submitCancellableForm(formData, appVersion, statusHandlerMock, 200);
+        await runCallback();
+        const formSubmittedAt = serverTimestamp();
+
+        const {"@metadata": formMetadata} = formDataWithAppVersion;
+
+        expect(set).toHaveBeenCalledWith(onReturnMock,
+            {formData: JSON.stringify({
+                    ...formDataWithAppVersion,
+                    "@metadata": {
+                        ...initMetadata,
+                        ...formMetadata,
+                    }
+                }), submittedAt: formSubmittedAt, "@status": "submit"});
+    });
+
+    it("should override metadata of initClient with submitForm metadata", async () => {
+        const initMetadata = {"sample": "init metadata"};
+        initClient(
+            app,
+            uid,
+            appVersion,
+            initMetadata,
+            "https://testDatabaseName.testRegion.firebasedatabase.app",
+        );
+        dbRefMock.mockReturnValue(formRefMock);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ["submitted", "finished"];
+        await submitCancellableForm(formData, appVersion, statusHandlerMock, 200);
+        await runCallback();
+        const formSubmittedAt = serverTimestamp();
+
+        expect(set).toHaveBeenCalledWith(onReturnMock,
+            {formData: JSON.stringify(formDataWithAppVersion), submittedAt: formSubmittedAt, "@status": "submit"});
+    });
 });
 
 describe("submitCancellableForm with timeout", () => {
@@ -229,6 +282,8 @@ describe("submitCancellableForm with timeout", () => {
         initClient(
             app,
             uid,
+            appVersion,
+            {},
             "https://testDatabaseName.testRegion.firebasedatabase.app",
         );
     });
@@ -356,6 +411,7 @@ describe("submitCancellableForm with custom status map", () => {
             app,
             uid,
             appVersion,
+            {},
             "https://testDatabaseName.testRegion.firebasedatabase.app",
             {
                 "submit": "Submit",
@@ -453,7 +509,7 @@ describe("submitCancellableForm with custom status map", () => {
 let finalFormData = {"@status": "finished", ...formData};
 describe("submitForm", () => {
     beforeAll(() => {
-        initClient(app, uid, "https://testDatabaseName.testRegion.firebasedatabase.app");
+        initClient(app, uid, appVersion, {}, "https://testDatabaseName.testRegion.firebasedatabase.app");
         jest.spyOn(index, "submitCancellableForm").mockImplementation((_formData, version, statusHandler) => {
             if (statusHandler) {
                 statusHandler("finished", {

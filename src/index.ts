@@ -8,6 +8,7 @@ import {FirebaseApp} from "firebase/app";
 let db: Database;
 let _uid: string;
 let _appVersion: string;
+let _metadata: Record<FormStatus, string>;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
@@ -15,6 +16,7 @@ export function initClient(
     app: FirebaseApp,
     uid: string,
     appVersion: string,
+    metadata: Record<string, any>,
     url?: string,
     statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
@@ -23,6 +25,7 @@ export function initClient(
     db = getDatabase(app, url);
     _uid = uid;
     _appVersion = appVersion;
+    _metadata = metadata;
 
     if (statusMap) {
         _statusMap = statusMap;
@@ -80,11 +83,16 @@ export const submitCancellableForm = async (
     }
 
     const formRef = push(ref(db, `forms/${_uid}`));
+    const {"@metadata": metadata} = formData;
     await set(formRef, {
         "@status": getStatusValue("submit"),
         formData: JSON.stringify({
             ...formData,
             "@appVersion": appVersion || _appVersion,
+            "@metadata": {
+                ..._metadata,
+                ...metadata,
+            }
         }),
         submittedAt: serverTimestamp(),
     });
