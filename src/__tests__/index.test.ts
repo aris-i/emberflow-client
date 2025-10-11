@@ -10,6 +10,9 @@ let appVersion = "0.0.1";
 const formData: FormData = {
     "@actionType": "create",
     "@docPath": `topics/topicId`,
+    "@metadata": {
+        "sample": "metadata",
+    },
     "name": 'testName',
 };
 const formDataWithAppVersion: FormData = {
@@ -69,7 +72,7 @@ const adminInstance = admin.initializeApp();
 
 describe('submitCancellableForm', () => {
     beforeAll(() => {
-        initClient(adminInstance, uid, appVersion);
+        initClient(adminInstance, uid, appVersion, {});
     });
     it('should set form data and listen for status changes', async () => {
         // dbRefMock.mockReturnValue(formRefMock);
@@ -189,11 +192,43 @@ describe('submitCancellableForm', () => {
             {...formData, submittedAt, "@status": "security-error", "@messages": {"name": "Invalid"}}, true);
         expect(formRefMock.off).toHaveBeenCalledWith('value', expect.any(Function));
     });
+
+    it("should merge metadata from initClient and submitForm", async () => {
+        const initMetadata = {"test": "another metadata"};
+        initClient(adminInstance, uid, appVersion, initMetadata);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ['submitted', 'finished'];
+        await submitCancellableForm(formData, statusHandlerMock, undefined, undefined, 200);
+        await runCallback();
+
+        const {"@metadata": formMetadata} = formDataWithAppVersion;
+
+        expect(formRefMock.set).toHaveBeenCalledWith(
+            {formData: JSON.stringify({
+                    ...formDataWithAppVersion,
+                    "@metadata": {
+                        ...initMetadata,
+                        ...formMetadata,
+                    }
+                }), submittedAt: {_nanoseconds, _seconds}, "@status": "submit"});
+    });
+
+    it("should override metadata of initClient with submitForm metadata", async () => {
+        const initMetadata = {"sample": "init metadata"};
+        initClient(adminInstance, uid, appVersion, initMetadata);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ['submitted', 'finished'];
+        await submitCancellableForm(formData, statusHandlerMock, undefined, undefined, 200);
+        await runCallback();
+
+        expect(formRefMock.set).toHaveBeenCalledWith(
+            {formData: JSON.stringify(formDataWithAppVersion), submittedAt: {_nanoseconds, _seconds}, "@status": "submit"});
+    });
 });
 
 describe('submitCancellableForm with timeout', () => {
     beforeAll(() => {
-        initClient(adminInstance, uid, appVersion);
+        initClient(adminInstance, uid, appVersion, {});
     });
 
     it("should return an error status and a message when submitCancellableForm reaches the timeout, and the status is not in a terminal state", async () => {
@@ -315,6 +350,7 @@ describe('submitCancellableForm with custom status map', () => {
             adminInstance,
             uid,
             appVersion,
+            {},
             {
                 "submit": "Submit",
                 "delay": "Delay",
@@ -420,6 +456,7 @@ describe('submitCancellableForm with custom uid', () => {
             adminInstance,
             serviceUid,
             appVersion,
+            {},
             {
                 "submit": "Submit",
                 "delay": "Delay",
@@ -461,7 +498,7 @@ let finalFormData = {"@status": "finished", ...formData};
 
 describe('submitForm', () => {
     beforeAll(() => {
-        initClient(adminInstance, uid, appVersion);
+        initClient(adminInstance, uid, appVersion, {});
         jest.spyOn(index, 'submitCancellableForm').mockImplementation((_formData, statusHandler, version) => {
             if (statusHandler) {
                 statusHandler('finished', {

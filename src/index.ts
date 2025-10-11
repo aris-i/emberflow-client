@@ -7,6 +7,7 @@ import DataSnapshot = database.DataSnapshot;
 let db: database.Database;
 let _uid: string;
 let _appVersion: string;
+let _metadata: Record<FormStatus, string>;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
@@ -14,6 +15,7 @@ export function initClient(
     fbAdmin: admin.app.App,
     uid: string,
     appVersion: string,
+    metadata: Record<string, any>,
     statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
@@ -21,6 +23,7 @@ export function initClient(
     db = fbAdmin.database();
     _uid = uid;
     _appVersion = appVersion;
+    _metadata = metadata;
 
     if (statusMap) {
         _statusMap = statusMap;
@@ -81,11 +84,16 @@ export const submitCancellableForm = async (
     }
 
     const formRef = db.ref(`forms/${uid || _uid}`).push();
+    const {"@metadata": metadata} = formData;
     await formRef.set({
         "@status": getStatusValue("submit"),
         formData: JSON.stringify({
             ...formData,
             "@appVersion": appVersion || _appVersion,
+            "@metadata": {
+                ..._metadata,
+                ...metadata,
+            }
         }),
         submittedAt: Timestamp.now(),
     });
