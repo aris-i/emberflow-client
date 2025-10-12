@@ -16,7 +16,7 @@ export function initClient(
     app: FirebaseApp,
     uid: string,
     appVersion: string,
-    metadata: Record<string, any>,
+    metadata?: Record<string, any>,
     url?: string,
     statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
@@ -25,7 +25,7 @@ export function initClient(
     db = getDatabase(app, url);
     _uid = uid;
     _appVersion = appVersion;
-    _metadata = metadata;
+    _metadata = metadata || {};
 
     if (statusMap) {
         _statusMap = statusMap;
@@ -37,7 +37,7 @@ export const submitCancellableForm = async (
     options?: SubmitCancellableFormOptions,
 ) => {
     const submittedAt = new Date();
-    const {statusHandler, appVersion, timeout, metadata} = options || {};
+    const {statusHandler, appVersion, timeout, metadata={}} = options || {};
 
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
@@ -89,7 +89,7 @@ export const submitCancellableForm = async (
             "@appVersion": appVersion || _appVersion,
             "@metadata": {
                 ..._metadata,
-                ...(metadata || {}),
+                ...metadata,
             }
         }),
         submittedAt: serverTimestamp(),
