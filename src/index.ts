@@ -9,7 +9,7 @@ import {
     onValue,
     get, child,
 } from "@react-native-firebase/database";
-import {FormData, FormStatus, FormStatusHandler} from "./types";
+import {FormData, FormStatus, SubmitCancellableFormOptions, SubmitFormOptions} from "./types";
 import {ReactNativeFirebase} from "@react-native-firebase/app";
 import FirebaseApp = ReactNativeFirebase.FirebaseApp;
 
@@ -19,7 +19,6 @@ let _appVersion: string;
 let _metadata: Record<string, any>;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
-
 
 export function initClient(
     app: FirebaseApp,
@@ -43,12 +42,7 @@ export function initClient(
 
 export const submitCancellableForm = async (
     formData: FormData,
-    options?: {
-        statusHandler?: FormStatusHandler,
-        appVersion?: string,
-        timeout?: number
-        metadata?: Record<string, any>
-    }
+    options?: SubmitCancellableFormOptions,
 ) => {
     const submittedAt = new Date();
     const {statusHandler, appVersion, timeout, metadata} = options || {};
@@ -175,7 +169,7 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData, appVersion?: string, timeout?: number) {
+export function submitForm(formData: FormData, options?: SubmitFormOptions) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData, {
@@ -184,8 +178,7 @@ export function submitForm(formData: FormData, appVersion?: string, timeout?: nu
                         resolve(data);
                     }
                 },
-                appVersion,
-                timeout
+                ...options,
             }
         );
     });
