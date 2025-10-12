@@ -1,4 +1,4 @@
-import {FormData, FormStatus, FormStatusHandler} from "./types";
+import {FormData, FormStatus, SubmitCancellableFormOptions, SubmitFormOptions} from "./types";
 import * as admin from "firebase-admin";
 import {database} from "firebase-admin";
 import {Timestamp} from "firebase-admin/firestore";
@@ -7,6 +7,7 @@ import DataSnapshot = database.DataSnapshot;
 let db: database.Database;
 let _uid: string;
 let _appVersion: string;
+let _metadata: Record<string, any>;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
@@ -14,6 +15,7 @@ export function initClient(
     fbAdmin: admin.app.App,
     uid: string,
     appVersion: string,
+    metadata: Record<string, any>,
     statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
 ) {
@@ -21,6 +23,7 @@ export function initClient(
     db = fbAdmin.database();
     _uid = uid;
     _appVersion = appVersion;
+    _metadata = metadata;
 
     if (statusMap) {
         _statusMap = statusMap;
@@ -29,12 +32,10 @@ export function initClient(
 
 export const submitCancellableForm = async (
     formData: FormData,
-    statusHandler?: FormStatusHandler,
-    uid?: string,
-    appVersion?: string,
-    timeout?: number,
+    options?: SubmitCancellableFormOptions,
 ) => {
     const submittedAt = new Date();
+    const {statusHandler, appVersion, timeout, metadata, uid} = options || {};
 
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
@@ -86,6 +87,10 @@ export const submitCancellableForm = async (
         formData: JSON.stringify({
             ...formData,
             "@appVersion": appVersion || _appVersion,
+            "@metadata": {
+                ..._metadata,
+                ...(metadata || {}),
+            }
         }),
         submittedAt: Timestamp.now(),
     });
@@ -155,18 +160,18 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData, uid?: string, appVersion?: string, timeout?: number) {
+export function submitForm(formData: FormData, options?: SubmitFormOptions) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
-            (_: FormStatus, data: FormData, isLastUpdate: boolean) => {
-                if (isLastUpdate) {
-                    resolve(data);
-                }
-            },
-            uid,
-            appVersion,
-            timeout,
+            {
+                statusHandler: (_: FormStatus, data: FormData, isLastUpdate: boolean) => {
+                    if (isLastUpdate) {
+                        resolve(data);
+                    }
+                },
+                ...options,
+            }
         );
     });
 }
