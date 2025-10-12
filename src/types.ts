@@ -8,3 +8,14 @@ export interface FormData {
     [key: string]: any;
 }
 export type FormStatusHandler = (status: FormStatus, data: FormData, isLastUpdate: boolean) => void;
+
+export interface SubmitFormOptions {
+    uid?: string,
+    appVersion?: string,
+    timeout?: number
+    metadata?: Record<string, any>
+}
+
+export interface SubmitCancellableFormOptions extends SubmitFormOptions {
+    statusHandler?: FormStatusHandler,
+}
