@@ -1,4 +1,4 @@
-import {FormData, FormStatus, FormStatusHandler} from "./types";
+import {FormData, FormStatus, SubmitCancellableFormOptions, SubmitFormOptions} from "./types";
 import {
     Database, get, getDatabase, off, onChildChanged, push,
     ref, serverTimestamp, set, update, DataSnapshot,
@@ -8,6 +8,7 @@ import {FirebaseApp} from "firebase/app";
 let db: Database;
 let _uid: string;
 let _appVersion: string;
+let _metadata: Record<string, any>;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
@@ -15,6 +16,7 @@ export function initClient(
     app: FirebaseApp,
     uid: string,
     appVersion: string,
+    metadata: Record<string, any>,
     url?: string,
     statusMap?: Record<FormStatus, string>,
     defaultTimeout?: number
@@ -23,6 +25,7 @@ export function initClient(
     db = getDatabase(app, url);
     _uid = uid;
     _appVersion = appVersion;
+    _metadata = metadata;
 
     if (statusMap) {
         _statusMap = statusMap;
@@ -31,11 +34,10 @@ export function initClient(
 
 export const submitCancellableForm = async (
     formData: FormData,
-    appVersion?: string,
-    statusHandler?: FormStatusHandler,
-    timeout?: number
+    options?: SubmitCancellableFormOptions,
 ) => {
     const submittedAt = new Date();
+    const {statusHandler, appVersion, timeout, metadata} = options || {};
 
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
@@ -85,6 +87,10 @@ export const submitCancellableForm = async (
         formData: JSON.stringify({
             ...formData,
             "@appVersion": appVersion || _appVersion,
+            "@metadata": {
+                ..._metadata,
+                ...(metadata || {}),
+            }
         }),
         submittedAt: serverTimestamp(),
     });
@@ -156,17 +162,18 @@ export const submitCancellableForm = async (
     }
 }
 
-export function submitForm(formData: FormData, appVersion?: string, timeout?: number) {
+export function submitForm(formData: FormData, options?: SubmitFormOptions) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
             formData,
-            appVersion,
-            (_, formData, isLastUpdate) => {
-                if (isLastUpdate) {
-                    resolve(formData);
-                }
-            },
-            timeout
+            {
+                statusHandler: (_, formData, isLastUpdate) => {
+                    if (isLastUpdate) {
+                        resolve(formData);
+                    }
+                },
+                ...options,
+            }
         );
     });
 }
