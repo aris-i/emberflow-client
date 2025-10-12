@@ -34,6 +34,7 @@ let appVersion = "0.0.1";
 const formData: FormData = {
     "@actionType": "create",
     "@docPath": "topics/topicId",
+    "@metadata": {},
     "name": "testName",
 };
 const formDataWithAppVersion: FormData = {
@@ -74,17 +75,16 @@ const app = getApp();
 const formRef = jest.fn();
 
 describe("submitCancellableForm", () => {
-    beforeAll(() => {
-        initClient(app, uid, appVersion);
-    });
-
     it("should set form data and listen for status changes", async () => {
+        initClient(app, uid, appVersion, {});
         const submittedAt = new Date();
         formRefMock.serverTimestamp.mockReturnValueOnce(submittedAt);
         formRefMock.push.mockReturnValueOnce(formRef);
         const statusHandlerMock = jest.fn();
         statusTransition = ["submitted", "finished"];
-        let submittedForm = await submitCancellableForm(formData, statusHandlerMock, appVersion, 200);
+        let submittedForm = await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion, timeout: 200,
+        });
         await runCallback();
 
         expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
@@ -103,16 +103,20 @@ describe("submitCancellableForm", () => {
     });
 
     it("cancel should return false if form has no @delay", async () => {
+        initClient(app, uid, appVersion, {});
         // Call the cancel function returned by submitCancellableForm
         const statusHandlerMock = jest.fn();
         statusTransition = ["submitted"];
-        let cancelForm = await submitCancellableForm(formData, statusHandlerMock, appVersion);
+        let cancelForm = await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion,
+        });
         runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
     });
 
     it("cancel should return true if form has @delay and status is delay", async () => {
+        initClient(app, uid, appVersion, {});
         // Call the cancel function returned by submitCancellableForm
         formRefMock.push.mockReturnValueOnce(formRef);
         const statusHandlerMock = jest.fn();
@@ -120,7 +124,7 @@ describe("submitCancellableForm", () => {
         let cancelForm = await submitCancellableForm({
             ...formData,
             "@delay": 1000,
-        }, statusHandlerMock, appVersion);
+        }, {statusHandler: statusHandlerMock, appVersion});
         await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(true);
@@ -129,13 +133,14 @@ describe("submitCancellableForm", () => {
     });
 
     it("cancel should return false if form has @delay but status is already submitted", async () => {
+        initClient(app, uid, appVersion, {});
         // Call the cancel function returned by submitCancellableForm
         const statusHandlerMock = jest.fn();
         statusTransition = ["delay", "submitted"];
         let cancelForm = await submitCancellableForm({
             ...formData,
             "@delay": 1000,
-        }, statusHandlerMock, appVersion);
+        }, {statusHandler: statusHandlerMock, appVersion});
         await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
@@ -143,17 +148,21 @@ describe("submitCancellableForm", () => {
     });
 
     it("unsubscribe should turn off listening to status", async () => {
+        initClient(app, uid, appVersion, {});
         // Call the cancel function returned by submitCancellableForm
         formRefMock.push.mockReturnValueOnce(formRef);
         const statusHandlerMock = jest.fn();
         statusTransition = ["delay", "submitted"];
-        let form = await submitCancellableForm(formData, statusHandlerMock, appVersion);
+        let form = await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion
+        });
         await runCallback();
         await form.unsubscribe();
         expect(unsubscribeMock).toHaveBeenCalled();
     });
 
     it("validation-error status should pass @messages in statusHandlers", async () => {
+        initClient(app, uid, appVersion, {});
         const submittedAt = new Date();
         formRefMock.serverTimestamp.mockReturnValueOnce(submittedAt);
         formRefMock.push.mockReturnValueOnce(formRef);
@@ -164,7 +173,9 @@ describe("submitCancellableForm", () => {
 
         const statusHandlerMock = jest.fn();
         statusTransition = ["submit", "validation-error"];
-        await submitCancellableForm(formData, statusHandlerMock, appVersion);
+        await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion
+        });
         await runCallback();
 
         expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
@@ -180,6 +191,7 @@ describe("submitCancellableForm", () => {
     });
 
     it("security-error status should pass @messages in statusHandlers", async () => {
+        initClient(app, uid, appVersion, {});
         const submittedAt = new Date();
         formRefMock.serverTimestamp.mockReturnValueOnce(submittedAt);
         formRefMock.push.mockReturnValueOnce(formRef);
@@ -190,7 +202,9 @@ describe("submitCancellableForm", () => {
 
         const statusHandlerMock = jest.fn();
         statusTransition = ["submit", "security-error"];
-        await submitCancellableForm(formData, statusHandlerMock, appVersion);
+        await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion
+        });
         await runCallback();
 
         expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
@@ -204,11 +218,62 @@ describe("submitCancellableForm", () => {
             {...formData, submittedAt, "@status": "security-error", "@messages": {"name": "Invalid"}}, true);
         expect(unsubscribeMock).toHaveBeenCalled();
     });
+
+    it("should merge metadata from initClient and submitForm", async () => {
+        const initMetadata = {"test": "another metadata"};
+        initClient(app, uid, appVersion, initMetadata);
+        const submittedAt = new Date();
+        formRefMock.serverTimestamp.mockReturnValueOnce(submittedAt);
+        formRefMock.push.mockReturnValueOnce(formRef);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ["submitted", "finished"];
+        const formMetadata = {"sample": "metadata"};
+        await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock,
+            appVersion,
+            timeout: 200,
+            metadata: formMetadata,
+        });
+        await runCallback();
+
+        expect(formRefMock.set).toHaveBeenCalledWith(formRef,
+            {formData: JSON.stringify({
+                    ...formDataWithAppVersion,
+                    "@metadata": {
+                        ...initMetadata,
+                        ...formMetadata,
+                    }
+                }), submittedAt, "@status": "submit"});
+    });
+
+    it("should override metadata of initClient with submitForm metadata", async () => {
+        const initMetadata = {"sample": "init metadata"};
+        initClient(app, uid, appVersion, initMetadata);
+        const submittedAt = new Date();
+        formRefMock.serverTimestamp.mockReturnValueOnce(submittedAt);
+        formRefMock.push.mockReturnValueOnce(formRef);
+        const statusHandlerMock = jest.fn();
+        statusTransition = ["submitted", "finished"];
+        const formMetadata = {"sample": "metadata"};
+        await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock,
+            appVersion,
+            timeout: 200,
+            metadata: formMetadata,
+        });
+        await runCallback();
+
+        expect(formRefMock.set).toHaveBeenCalledWith(formRef,
+            {formData: JSON.stringify({
+                    ...formDataWithAppVersion,
+                    "@metadata": formMetadata,
+                }), submittedAt, "@status": "submit"});
+    });
 });
 
 describe("submitCancellableForm with timeout", () => {
     beforeAll(() => {
-        initClient(app, uid, appVersion);
+        initClient(app, uid, appVersion, {});
     });
 
     it("should return an error status and a message when submitCancellableForm reaches the timeout, and the status is not in a terminal state", async () => {
@@ -222,7 +287,9 @@ describe("submitCancellableForm with timeout", () => {
         });
 
         const statusHandlerMock = jest.fn();
-        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, appVersion, timeout);
+        const submittedForm = await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion, timeout,
+        });
         await runCallback();
         const submittedAt = new Date();
 
@@ -262,7 +329,9 @@ describe("submitCancellableForm with timeout", () => {
         const timeout = 1000;
 
         const statusHandlerMock = jest.fn();
-        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, appVersion, timeout);
+        const submittedForm = await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion, timeout,
+        });
         await runCallback();
         const submittedAt = new Date();
 
@@ -297,7 +366,9 @@ describe("submitCancellableForm with timeout", () => {
         const timeout = 1000;
 
         const statusHandlerMock = jest.fn();
-        const submittedForm = await submitCancellableForm(formData, statusHandlerMock, appVersion, timeout);
+        const submittedForm = await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion, timeout,
+        });
         await runCallback();
         const submittedAt = new Date();
 
@@ -331,6 +402,7 @@ describe("submitCancellableForm with custom status map", () => {
         initClient(app,
             uid,
             appVersion,
+            {},
             {
                 "submit": "Submit",
                 "delay": "Delay",
@@ -352,7 +424,9 @@ describe("submitCancellableForm with custom status map", () => {
 
         const statusHandlerMock = jest.fn();
         statusTransition = ["Submitted", "Finished"];
-        let cancelForm = await submitCancellableForm(formData, statusHandlerMock, appVersion);
+        let cancelForm = await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion,
+        });
         await runCallback();
 
         expect(formRefMock.child).toHaveBeenCalledWith({}, `forms/${uid}`);
@@ -373,7 +447,9 @@ describe("submitCancellableForm with custom status map", () => {
         // Call the cancel function returned by submitCancellableForm
         const statusHandlerMock = jest.fn();
         statusTransition = ["Submitted"];
-        let cancelForm = await submitCancellableForm(formData, statusHandlerMock, appVersion);
+        let cancelForm = await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion
+        });
         runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
@@ -387,7 +463,7 @@ describe("submitCancellableForm with custom status map", () => {
         let cancelForm = await submitCancellableForm({
             ...formData,
             "@delay": 1000,
-        }, statusHandlerMock, appVersion);
+        }, {statusHandler: statusHandlerMock, appVersion});
         await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(true);
@@ -402,7 +478,7 @@ describe("submitCancellableForm with custom status map", () => {
         let cancelForm = await submitCancellableForm({
             ...formData,
             "@delay": 1000,
-        }, statusHandlerMock, appVersion);
+        }, {statusHandler: statusHandlerMock, appVersion});
         await runCallback();
         const cancelResult = await cancelForm.cancel();
         expect(cancelResult).toBe(false);
@@ -414,7 +490,9 @@ describe("submitCancellableForm with custom status map", () => {
         // Call the cancel function returned by submitCancellableForm
         const statusHandlerMock = jest.fn();
         statusTransition = ["Delay", "Submitted"];
-        let form = await submitCancellableForm(formData, statusHandlerMock, appVersion);
+        let form = await submitCancellableForm(formData, {
+            statusHandler: statusHandlerMock, appVersion,
+        });
         runCallback();
         await form.unsubscribe();
         expect(unsubscribeMock).toHaveBeenCalled();
@@ -424,8 +502,9 @@ describe("submitCancellableForm with custom status map", () => {
 let finalFormData = {"@status": "finished" as FormStatus, ...formData};
 describe("submitForm", () => {
     beforeAll(() => {
-        initClient(app, uid, appVersion);
-        jest.spyOn(index, "submitCancellableForm").mockImplementation((_formData, statusHandler, version) => {
+        initClient(app, uid, appVersion, {});
+        jest.spyOn(index, "submitCancellableForm").mockImplementation((_formData, options) => {
+            const {statusHandler, appVersion: version} = options || {};
             if (statusHandler) {
                 statusHandler("finished", {
                     ...finalFormData,
@@ -457,7 +536,7 @@ describe("submitForm", () => {
 
     it("should return app version from submitForm", async () => {
         const customAppVersion = "0.0.2";
-        const {"@appVersion": version} = await submitForm(formData, customAppVersion);
+        const {"@appVersion": version} = await submitForm(formData, {appVersion: customAppVersion});
 
         expect(version).toEqual(customAppVersion);
     });
