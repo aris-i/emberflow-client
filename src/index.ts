@@ -16,7 +16,7 @@ import FirebaseApp = ReactNativeFirebase.FirebaseApp;
 let db: FirebaseDatabaseTypes.Module;
 let _uid: string;
 let _appVersion: string;
-let _metadata: Record<FormStatus, string>;
+let _metadata: Record<string, any>;
 let _statusMap: Record<FormStatus, string>;
 let DEFAULT_TIMEOUT = 60000;
 
@@ -43,11 +43,15 @@ export function initClient(
 
 export const submitCancellableForm = async (
     formData: FormData,
-    statusHandler?: FormStatusHandler,
-    appVersion?: string,
-    timeout?: number
+    options?: {
+        statusHandler?: FormStatusHandler,
+        appVersion?: string,
+        timeout?: number
+        metadata?: Record<string, any>
+    }
 ) => {
     const submittedAt = new Date();
+    const {statusHandler, appVersion, timeout, metadata} = options || {};
 
     function isTerminalState(status: FormStatus) {
         return status === getStatusValue("finished")
@@ -94,7 +98,6 @@ export const submitCancellableForm = async (
     }
 
     const formRef = push(child(ref(db), `forms/${_uid}`));
-    const {"@metadata": metadata} = formData;
     await set(formRef, {
         "@status": getStatusValue("submit"),
         formData: JSON.stringify({
@@ -102,7 +105,7 @@ export const submitCancellableForm = async (
             "@appVersion": appVersion || _appVersion,
             "@metadata": {
                 ..._metadata,
-                ...metadata,
+                ...(metadata || {}),
             }
         }),
         submittedAt: serverTimestamp(),
@@ -175,14 +178,15 @@ export const submitCancellableForm = async (
 export function submitForm(formData: FormData, appVersion?: string, timeout?: number) {
     return new Promise<FormData>((resolve) => {
         submitCancellableForm(
-            formData,
-            (_, data, isLastUpdate) => {
-                if (isLastUpdate) {
-                    resolve(data);
-                }
-            },
-            appVersion,
-            timeout
+            formData, {
+                statusHandler: (_, data, isLastUpdate) => {
+                    if (isLastUpdate) {
+                        resolve(data);
+                    }
+                },
+                appVersion,
+                timeout
+            }
         );
     });
 }
