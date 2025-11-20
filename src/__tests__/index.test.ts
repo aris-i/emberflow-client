@@ -1,7 +1,7 @@
 import * as index from "../index";
 import {initClient, submitCancellableForm, submitForm} from "../index";
 import {FormData} from "../types";
-import {get, off, onChildChanged, ref, serverTimestamp, set, update} from "firebase/database";
+import {get, off, onValue, ref, serverTimestamp, set, update} from "firebase/database";
 import {initializeApp} from "firebase/app";
 
 let uid = "testUserId";
@@ -51,7 +51,7 @@ jest.mock("firebase/database", () => {
             _formData = formData;
         }),
         update: jest.fn(),
-        onChildChanged: jest.fn((query: any, callback: Function) => {
+        onValue: jest.fn((query: any, callback: Function) => {
             _callback = callback;
         }),
         push: jest.fn(() => {
@@ -113,7 +113,7 @@ describe("submitCancellableForm", () => {
         expect(typeof submittedForm.cancel).toBe("function");
         expect(set).toHaveBeenCalledWith(onReturnMock,
             {formData: JSON.stringify(formDataWithAppVersion), submittedAt: formSubmittedAt, "@status": "submit"});
-        expect(onChildChanged).toHaveBeenCalledWith(onReturnMock, expect.any(Function));
+        expect(onValue).toHaveBeenCalledWith(onReturnMock, expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith("submitted",
             {...formData, submittedAt, "@status": "submitted"}, false);
@@ -233,7 +233,7 @@ describe("submitCancellableForm", () => {
         expect(typeof cancelForm.cancel).toBe("function");
         expect(set).toHaveBeenCalledWith(onReturnMock,
             {formData: JSON.stringify(formDataWithAppVersion), submittedAt: formSubmittedAt, "@status": "submit"});
-        expect(onChildChanged).toHaveBeenCalledWith(onReturnMock, expect.any(Function));
+        expect(onValue).toHaveBeenCalledWith(onReturnMock, expect.any(Function));
         expect(get).toHaveBeenCalledTimes(1);
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith("submit",
@@ -511,7 +511,7 @@ describe("submitCancellableForm with custom status map", () => {
         expect(set).toHaveBeenCalledWith(onReturnMock,
             {formData: JSON.stringify(formDataWithAppVersion), submittedAt: formSubmittedAt, "@status": "Submit"}
         );
-        expect(onChildChanged).toHaveBeenCalledWith(onReturnMock, expect.any(Function));
+        expect(onValue).toHaveBeenCalledWith(onReturnMock, expect.any(Function));
         expect(statusHandlerMock).toHaveBeenCalledTimes(2);
         expect(statusHandlerMock).toHaveBeenCalledWith("Submitted",
             {...formData, submittedAt, "@status": "Submitted"}, false);

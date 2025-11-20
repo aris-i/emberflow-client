@@ -1,6 +1,6 @@
 import {FormData, FormStatus, SubmitCancellableFormOptions, SubmitFormOptions} from "./types";
 import {
-    Database, get, getDatabase, off, onChildChanged, push,
+    Database, get, getDatabase, off, onValue, push,
     ref, serverTimestamp, set, update, DataSnapshot,
 } from "firebase/database";
 import {FirebaseApp} from "firebase/app";
@@ -135,7 +135,7 @@ export const submitCancellableForm = async (
         currentStatus = newStatus;
     };
 
-    onChildChanged(formRef, onValueChange);
+    onValue(formRef, onValueChange);
 
     const timeoutId = startTimeoutMonitor();
 
